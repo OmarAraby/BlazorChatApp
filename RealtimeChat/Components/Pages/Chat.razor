@@ -1,0 +1,202 @@
+﻿@page "/chat"
+@inject IChatService ChatService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
+
+<MudContainer Class="mt-3" MaxWidth="MaxWidth.Large">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudGrid AlignItems="Center">
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.h4" GutterBottom="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Forum" Class="mr-2" />
+                            Chat Rooms
+                        </MudText>
+                        <MudText Typo="Typo.body1" Color="Color.Secondary">
+                            Join public rooms or create your own private spaces
+                        </MudText>
+                    </MudItem>
+                    <MudItem xs="6" sm="6" Class="d-flex h-50 mt-5 justify-end">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="OpenCreateRoomDialog">
+                            Create Room
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" GutterBottom="true">Public Rooms</MudText>
+
+                @if (publicRooms.Any())
+                {
+                    <MudGrid>
+                        @foreach (var room in publicRooms)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudCard Elevation="2" Class="cursor-pointer hover-card" @onclick="() => SelectRoom(room.Id)">
+                                    <MudCardContent>
+                                        <MudGrid AlignItems="Center">
+                                            <MudItem xs="2">
+                                                <MudAvatar Color="Color.Primary" Size="Size.Medium">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Forum" />
+                                                </MudAvatar>
+                                            </MudItem>
+                                            <MudItem xs="10">
+                                                <MudText Typo="Typo.h6">@room.Name</MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                    @(room.Description ?? "No description")
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                    @room.Members.Count members
+                                                </MudText>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudCardContent>
+                                    <MudCardActions>
+                                        <MudButton Variant="Variant.Text"
+                                                   Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.Login"
+                                                   OnClick="@(() => SelectRoom(room.Id))">
+                                            Join Chat
+                                        </MudButton>
+                                        <MudSpacer />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Info"
+                                                       Color="Color.Default"
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => ShowRoomInfo(room))" />
+                                    </MudCardActions>
+                                </MudCard>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Class="mt-4">
+                        <MudText>No public rooms available. Create one to get started!</MudText>
+                    </MudAlert>
+                }
+            </MudPaper>
+        </MudItem>
+
+        @if (userRooms.Any())
+        {
+            <MudItem xs="12">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">Your Rooms</MudText>
+
+                    <MudGrid>
+                        @foreach (var room in userRooms)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudCard Elevation="2" Class="cursor-pointer hover-card" @onclick="() => SelectRoom(room.Id)">
+                                    <MudCardContent>
+                                        <MudGrid AlignItems="Center">
+                                            <MudItem xs="2">
+                                                <MudAvatar Color="@(room.IsPrivate? Color.Secondary: Color.Primary)" Size="Size.Medium">
+                                                    <MudIcon Icon="@(room.IsPrivate? Icons.Material.Filled.Lock : Icons.Material.Filled.Forum)" />
+                                                </MudAvatar>
+                                            </MudItem>
+                                            <MudItem xs="10">
+                                                <MudText Typo="Typo.h6">@room.Name</MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                    @(room.Description ?? "No description")
+                                                </MudText>
+                                                <MudChip T="ChatRoom" Size="Size.Small" Color="@(room.IsPrivate? Color.Warning: Color.Success)">
+                                                    @(room.IsPrivate ? "Private" : "Public")
+                                                </MudChip>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .hover-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    private List<ChatRoom> publicRooms = new();
+    private List<ChatRoom> userRooms = new();
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            await LoadRooms();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("Account/Login");
+        }
+    }
+
+    private async Task LoadRooms()
+    {
+        publicRooms = await ChatService.GetPublicRoomsAsync();
+
+        if (userId != null)
+        {
+            userRooms = await ChatService.GetUserRoomsAsync(userId);
+        }
+
+        StateHasChanged();
+    }
+
+    private void SelectRoom(int roomId)
+    {
+        NavigationManager.NavigateTo($"/chat/{roomId}");
+    }
+
+    private async Task OpenCreateRoomDialog()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+
+        var dialog = await DialogService.ShowAsync<CreateRoomDialog>("Create New Room", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadRooms(); // Refresh the room list
+        }
+    }
+
+    private async Task ShowRoomInfo(ChatRoom room)
+    {
+        var parameters = new DialogParameters { ["Room"] = room };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+
+        await DialogService.ShowAsync<RoomInfoDialog>("Room Information", parameters, options);
+    }
+}

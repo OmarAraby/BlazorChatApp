@@ -1,0 +1,156 @@
+﻿@page "/Account/Manage"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using RealtimeChat.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Profile</PageTitle>
+
+<StatusMessage />
+
+<style>
+
+
+    .profile-container {
+        /* min-height: 100vh; */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: linear-gradient(145deg, #1a1a27, #151521);
+    }
+
+    .glass-card {
+        background: rgba(30, 30, 45, 0.85);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 2rem;
+        width: 100%;
+        max-width: 500px;
+    }
+
+    h3 {
+        margin-bottom: .5rem;
+        color: #b2b0bf;
+    }
+
+    .form-floating input.form-control {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: white;
+        border-radius: 8px;
+        padding: 12px 16px;
+    }
+
+    .form-floating label.form-label {
+        color: #92929f;
+    }
+
+    .form-floating input[disabled] {
+        opacity: 0.5;
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .btn-primary {
+        background-color: #7e6fff;
+        color: white;
+        border: none;
+        padding: 12px;
+        font-weight: 500;
+        border-radius: 8px;
+        width: 100%;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #6a5dff;
+    }
+
+    .text-danger {
+        color: #ff3f5f;
+        font-size: 0.875em;
+    }
+
+    .alert {
+        background-color: rgba(126, 111, 255, 0.1);
+        color: #b2b0bf;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+</style>
+
+<div class="profile-container">
+    <div class="glass-card">
+        <h3>Profile</h3>
+
+        <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <AntiforgeryTokenInput />
+
+            <div class="form-floating mb-3">
+                <input type="text" value="@username" class="form-control" placeholder="Please choose your username." disabled />
+                <label for="username" class="form-label">Username</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
+                <label for="phone-number" class="form-label">Phone number</label>
+                <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private ApplicationUser user = default!;
+    private string? username;
+    private string? phoneNumber;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        username = await UserManager.GetUserNameAsync(user);
+        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+
+        Input.PhoneNumber ??= phoneNumber;
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (Input.PhoneNumber != phoneNumber)
+        {
+            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+            if (!setPhoneResult.Succeeded)
+            {
+                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+            }
+        }
+
+        await SignInManager.RefreshSignInAsync(user);
+        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+    }
+
+    private sealed class InputModel
+    {
+        [Phone]
+        [Display(Name = "Phone number")]
+        public string? PhoneNumber { get; set; }
+    }
+}

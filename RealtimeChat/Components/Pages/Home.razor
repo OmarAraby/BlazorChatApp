@@ -1,0 +1,155 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudPaper Class="pa-16 ma-8" Elevation="3">
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <div class="d-flex flex-column justify-center" style="height: 100%;">
+                    <MudText Typo="Typo.h2" GutterBottom="true" Color="Color.Primary">
+                        Welcome to Realtime Chat
+                    </MudText>
+                    <MudText Typo="Typo.h5" GutterBottom="true" Color="Color.Secondary">
+                        Connect with friends and colleagues instantly
+                    </MudText>
+                    <MudText Typo="Typo.body1" Class="mb-8">
+                        Our real-time chat application allows you to communicate seamlessly with individuals or groups.
+                        Create public or private rooms, share messages, and stay connected with your network.
+                    </MudText>
+
+                    <AuthorizeView>
+                        <Authorized>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Size="Size.Large"
+                                       StartIcon="@Icons.Material.Filled.Chat"
+                                       Href="/chat"
+                                       Class="mt-4">
+                                Go to Chat Rooms
+                            </MudButton>
+                        </Authorized>
+                        <NotAuthorized>
+                            <MudGrid>
+                                <MudItem xs="12" sm="6">
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               Size="Size.Large"
+                                               StartIcon="@Icons.Material.Filled.Login"
+                                               Href="/Account/Login"
+                                               FullWidth="true">
+                                        Login
+                                    </MudButton>
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Primary"
+                                               Size="Size.Large"
+                                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                                               Href="/Account/Register"
+                                               FullWidth="true">
+                                        Register
+                                    </MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </div>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" Class="d-flex justify-center">
+                <MudImage Src="/Images/chat.png"
+                          Alt="Chat Illustration"
+                          Width="400"
+                          Height="400"
+                          ObjectFit="ObjectFit.Contain" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid Class="mt-8">
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+                Key Features
+            </MudText>
+        </MudItem>
+
+        <MudItem xs="12" sm="4">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudAvatar Color="Color.Primary">
+                            <MudIcon Icon="@Icons.Material.Filled.Forum" />
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Public & Private Rooms</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText>
+                        Create public rooms for open discussions or private rooms for confidential conversations.
+                        Manage room members and customize your chat experience.
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="4">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudAvatar Color="Color.Secondary">
+                            <MudIcon Icon="@Icons.Material.Filled.Chat" />
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Real-time Messaging</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText>
+                        Experience instant message delivery with real-time updates. See when users are online
+                        and receive immediate notifications for new messages.
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="4">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudAvatar Color="Color.Tertiary">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Private Messaging</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText>
+                        Connect directly with individuals through private messaging. Maintain one-on-one
+                        conversations separate from group discussions.
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // User is already logged in, we could auto-redirect to chat
+            // NavigationManager.NavigateTo("/chat");
+        }
+    }
+}
+

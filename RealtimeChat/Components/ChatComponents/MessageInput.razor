@@ -1,0 +1,168 @@
+﻿@inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<div class="message-input-container">
+    <MudPaper Class="pa-3" Elevation="2">
+        <MudGrid AlignItems="End">
+            <MudItem xs="12" sm="10">
+                <MudTextField @bind-Value="message"
+                              Label="Type a message"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              MaxLines="5"
+                              OnKeyDown="@HandleKeyPress"
+                              Immediate="true"
+                              Class="message-input-field"
+                              Placeholder="@GetPlaceholderText()" />
+            </MudItem>
+            <MudItem xs="12" sm="2" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Send"
+                           OnClick="SendMessage"
+                           Disabled="@(string.IsNullOrWhiteSpace(message))"
+                           Class="send-button">
+                    Send
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        <MudGrid Class="mt-2">
+            <MudItem xs="12">
+                <div class="d-flex align-center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mr-2">
+                        Press Enter to send, Shift+Enter for new line
+                    </MudText>
+                    <MudSpacer />
+                    @if (isTyping)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">
+                            Sending...
+                        </MudText>
+                    }
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</div>
+
+<style>
+    .message-input-container {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        z-index: 10;
+    }
+
+    .message-input-field {
+        width: 100%;
+    }
+
+    .send-button {
+        height: 56px;
+        min-width: 100px;
+    }
+</style>
+
+@code {
+    [Parameter] public int RoomId { get; set; }
+    [Parameter] public string? RecipientId { get; set; }
+    [Parameter] public bool IsPrivateChat { get; set; } = false;
+
+    private string message = string.Empty;
+    private bool isTyping = false;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            await SetupSignalR();
+        }
+    }
+
+    private async Task SetupSignalR()
+    {
+        if (HubConnection.State == HubConnectionState.Disconnected)
+        {
+            try
+            {
+                await HubConnection.StartAsync();
+                if (IsPrivateChat && RecipientId != null)
+                {
+                    // No need to join a room for private chat, just listen
+                    HubConnection.On("ReceivePrivateMessage", () => { }); // Placeholder
+                }
+                else
+                {
+                    await HubConnection.SendAsync("JoinRoom", RoomId);
+                    HubConnection.On("ReceiveRoomMessage", () => { }); // Placeholder
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error connecting to chat: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(message) || isTyping) return;
+
+        isTyping = true;
+        StateHasChanged(); 
+
+        try
+        {
+            if (IsPrivateChat && RecipientId != null)
+            {
+                await HubConnection.SendAsync("SendPrivateMessage", RecipientId, message);
+            }
+            else
+            {
+                await HubConnection.SendAsync("SendMessageToRoom", RoomId, message);
+            }
+
+            message = string.Empty;
+            Snackbar.Add("Message sent!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error sending message: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isTyping = false;
+            StateHasChanged(); 
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+        // Allow Shift+Enter to add a new line without triggering SendMessage
+    }
+
+    private string GetPlaceholderText()
+    {
+        if (IsPrivateChat)
+        {
+            return "Send a private message...";
+        }
+        else
+        {
+            return "Type your message here...";
+        }
+    }
+}

@@ -1,0 +1,120 @@
+﻿@inject IChatService ChatService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Style="max-width: 600px;">
+            <MudText Typo="Typo.h6" GutterBottom="true">Create New Room</MudText>
+
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="roomName"
+                                  Label="Room Name"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="Room name is required"
+                                  MaxLength="50" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="roomDescription"
+                                  Label="Description (Optional)"
+                                  Variant="Variant.Outlined"
+                                  Lines="3"
+                                  MaxLength="200" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudSwitch T="bool" @bind-Checked="isPrivate"
+                               Label="Private Room"
+                               Color="Color.Primary" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Private rooms require invitation to join
+                    </MudText>
+                </MudItem>
+
+                @if (isPrivate)
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info" Class="mt-2">
+                            <MudText>You will be able to invite users after creating the room.</MudText>
+                        </MudAlert>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="CreateRoom"
+                   Disabled="@(string.IsNullOrWhiteSpace(roomName) || isCreating)">
+            @if (isCreating)
+            {
+                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                <MudText>Creating...</MudText>
+            }
+            else
+            {
+                <MudText>Create Room</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IMudDialogInstance MudDialog { get; set; }
+
+
+    private string roomName = string.Empty;
+    private string roomDescription = string.Empty;
+    private bool isPrivate = false;
+    private bool isCreating = false;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task CreateRoom()
+    {
+        if (string.IsNullOrWhiteSpace(roomName) || currentUserId == null) return;
+
+        isCreating = true;
+        StateHasChanged();
+
+        try
+        {
+            var newRoom = await ChatService.CreateRoomAsync(
+                roomName.Trim(),
+                string.IsNullOrWhiteSpace(roomDescription) ? null : roomDescription.Trim(),
+                isPrivate,
+                currentUserId);
+
+            Snackbar.Add($"Room '{newRoom.Name}' created successfully!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(newRoom));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating room: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isCreating = false;
+            StateHasChanged();
+        }
+    }
+}
+

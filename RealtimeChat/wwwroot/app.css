@@ -1,0 +1,125 @@
+/* Global styles for the chat application */
+
+:root {
+    --mud-palette-primary: #3f51b5;
+    --mud-palette-primary-lighten: rgba(63, 81, 181, 0.1);
+    --mud-palette-secondary: #f50057;
+    --mud-palette-tertiary: #2196f3;
+    --mud-palette-info: #2196f3;
+    --mud-palette-success: #4caf50;
+    --mud-palette-warning: #ff9800;
+    --mud-palette-error: #f44336;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-in-up {
+    animation: slideInUp 0.3s ease-out;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .mud-container {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .mud-card-content {
+        padding: 8px !important;
+    }
+
+    .mud-button {
+        padding: 6px 12px !important;
+    }
+}
+
+/* Dark mode adjustments */
+.mud-theme-dark .message-card-mine {
+    background-color: rgba(63, 81, 181, 0.2) !important;
+}
+
+.mud-theme-dark .mud-input {
+    color: #fff !important;
+}
+
+/* Accessibility improvements */
+.mud-button:focus, .mud-input:focus {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .mud-appbar, .mud-drawer, .message-input-container {
+        display: none !important;
+    }
+
+    .mud-main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}

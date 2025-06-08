@@ -1,0 +1,393 @@
+﻿@page "/chat/{RoomId:int}"
+@using RealtimeChat.Components.ChatComponents
+@inject IChatService ChatService
+@inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="chat-container">
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" sm="8">
+                <MudText Typo="Typo.h4">
+                    <MudIcon Icon="@(room?.IsPrivate == true ? Icons.Material.Filled.Lock : Icons.Material.Filled.Forum)" Class="mr-2" />
+                    @(room?.Name ?? "Loading...")
+                </MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    @(room?.Description ?? "")
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex justify-end">
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                    <MudButton OnClick="ShowRoomInfo" StartIcon="@Icons.Material.Filled.Info">Info</MudButton>
+                    <MudButton OnClick="InviteUser" StartIcon="@Icons.Material.Filled.PersonAdd">Invite</MudButton>
+                    <MudButton OnClick="LeaveRoom" StartIcon="@Icons.Material.Filled.ExitToApp" Color="Color.Error">Leave</MudButton>
+                </MudButtonGroup>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid>
+        <MudItem xs="12" sm="9">
+            <MudPaper Class="pa-4 message-container" Elevation="1">
+                <div class="message-list" @ref="messageContainerRef">
+                    @if (messages.Any())
+                    {
+                        @foreach (var message in messages)
+                        {
+                            <div class="@GetMessageClass(message)">
+                                <MudCard Elevation="0" Class="@GetMessageCardClass(message)">
+                                    <MudCardContent Class="py-2 px-3">
+                                        <MudGrid>
+                                            <MudItem xs="12" Class="d-flex align-center">
+                                                <MudAvatar Size="Size.Small" Class="mr-2">
+                                                    @GetInitials(message.Sender)
+                                                </MudAvatar>
+                                                <MudText Typo="Typo.body1" Class="font-weight-bold">
+                                                    @(message.Sender.DisplayName ?? message.Sender.UserName)
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Class="ml-2" Color="Color.Secondary">
+                                                    @message.SentAt.ToLocalTime().ToString("HH:mm")
+                                                </MudText>
+                                            </MudItem>
+                                            <MudItem xs="12">
+                                                <MudText Typo="Typo.body1" Class="message-content">
+                                                    @message.Content
+                                                </MudText>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudCardContent>
+                                </MudCard>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Align="Align.Center" Class="my-4" Color="Color.Secondary">
+                            No messages yet. Start the conversation!
+                        </MudText>
+                    }
+                </div>
+            </MudPaper>
+
+            <MudPaper Class="pa-4 mt-3" Elevation="1">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="newMessage"
+                                      Label="Type a message"
+                                      Variant="Variant.Outlined"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@Icons.Material.Filled.Send"
+                                      OnAdornmentClick="SendMessage"
+                                      OnKeyDown="@HandleKeyPress"
+                                      Immediate="true"
+                                      Lines="3"
+                                      Class="message-input" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="3">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" GutterBottom="true">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+                    Members (@(roomMembers.Count))
+                </MudText>
+
+                <MudList T="ChatRoomMember" Dense="true" Clickable="true">
+                    @foreach (var member in roomMembers)
+                    {
+                        <MudListItem Icon="@Icons.Material.Filled.Person">
+                            <div class="d-flex align-center">
+                                <MudBadge BadgeClass="ml-4" Color="@(member.User.IsOnline? Color.Success: Color.Success)"
+                                          Dot="true"
+                                          Overlap="true"
+                                          Class="mr-2">
+                                    <MudText>@(member.User.DisplayName ?? member.User.UserName)</MudText>
+                                </MudBadge>
+
+                                @if (member.IsAdmin)
+                                {
+                                    <MudChip T="ChatRoomMember" Size="Size.Small" Color="Color.Primary" Class="ml-2">Admin</MudChip>
+                                }
+                            </div>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .chat-container {
+        height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message-container {
+        height: calc(100vh - 350px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message-list {
+        overflow-y: auto;
+        flex-grow: 1;
+        padding: 10px;
+    }
+
+    .message-row {
+        margin-bottom: 12px;
+        display: flex;
+    }
+
+    .message-row-mine {
+        justify-content: flex-end;
+    }
+
+    .message-card {
+        max-width: 80%;
+        border-radius: 12px;
+    }
+
+    .message-card-mine {
+        background-color: var(--mud-palette-primary-lighten);
+    }
+
+    .message-content {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .message-input {
+        width: 100%;
+    }
+</style>
+
+@code {
+    [Parameter] public int RoomId { get; set; }
+    private ChatRoom? room;
+    private List<Message> messages = new();
+    private List<ChatRoomMember> roomMembers = new();
+    private string newMessage = string.Empty;
+    private string? currentUserId;
+    private ElementReference messageContainerRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            await LoadRoomData();
+            await SetupSignalR();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("Account/Login");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task LoadRoomData()
+    {
+        try
+        {
+            room = await ChatService.GetRoomAsync(RoomId);
+            messages = await ChatService.GetRoomMessagesAsync(RoomId);
+
+            // Load room members
+            if (room != null)
+            {
+                roomMembers = room.Members.ToList();
+            }
+
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading room data: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SetupSignalR()
+    {
+        if (HubConnection.State == HubConnectionState.Disconnected)
+        {
+            try
+            {
+                await HubConnection.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error connecting to chat: {ex.Message}", Severity.Error);
+                return;
+            }
+        }
+
+        await HubConnection.SendAsync("JoinRoom", RoomId);
+
+        HubConnection.On<dynamic>("ReceiveRoomMessage", async (messageData) =>
+        {
+            try
+            {
+                // Convert dynamic to Message object
+                var newMessage = new Message
+                {
+                    Id = messageData.Id,
+                    Content = messageData.Content,
+                    SenderId = messageData.SenderId,
+                    SentAt = messageData.SentAt,
+                    Sender = new ApplicationUser
+                    {
+                        Id = messageData.SenderId,
+                        DisplayName = messageData.SenderName
+                    }
+                };
+
+                messages.Add(newMessage);
+                StateHasChanged();
+                await ScrollToBottom();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error processing message: {ex.Message}", Severity.Error);
+            }
+        });
+
+        // Handle user online/offline events
+        HubConnection.On<string>("UserOnline", (userId) =>
+        {
+            var member = roomMembers.FirstOrDefault(m => m.UserId == userId);
+            if (member != null)
+            {
+                member.User.IsOnline = true;
+                StateHasChanged();
+            }
+        });
+
+        HubConnection.On<string>("UserOffline", (userId) =>
+        {
+            var member = roomMembers.FirstOrDefault(m => m.UserId == userId);
+            if (member != null)
+            {
+                member.User.IsOnline = false;
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(newMessage)) return;
+
+        try
+        {
+            await HubConnection.SendAsync("SendMessageToRoom", RoomId, newMessage);
+            newMessage = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error sending message: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private string GetMessageClass(Message message)
+    {
+        return message.SenderId == currentUserId ? "message-row message-row-mine" : "message-row";
+    }
+
+    private string GetMessageCardClass(Message message)
+    {
+        return message.SenderId == currentUserId ? "message-card message-card-mine" : "message-card";
+    }
+
+    private string GetInitials(ApplicationUser user)
+    {
+        var name = user.DisplayName ?? user.UserName ?? "?";
+        return name.Length > 0 ? name[0].ToString().ToUpper() : "?";
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("scrollToBottom", messageContainerRef);
+        }
+        catch { /* Ignore errors */ }
+    }
+
+    private async Task ShowRoomInfo()
+    {
+        if (room == null) return;
+
+        var parameters = new DialogParameters { ["Room"] = room };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+
+        await DialogService.ShowAsync<RoomInfoDialog>("Room Information", parameters, options);
+    }
+
+    private async Task InviteUser()
+    {
+        var parameters = new DialogParameters { ["RoomId"] = RoomId };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small };
+
+        var dialog = await DialogService.ShowAsync<UserSearchDialog>("Invite User", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadRoomData(); // Refresh member list
+            Snackbar.Add("User invited successfully!", Severity.Success);
+        }
+    }
+
+    private async Task LeaveRoom()
+    {
+        var parameters = new DialogParameters
+        {
+            ["ContentText"] = "Are you sure you want to leave this room?",
+            ["ButtonText"] = "Leave Room",
+            ["Color"] = Color.Error
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Logic to leave room would go here
+
+            // Navigate back to chat rooms list
+            NavigationManager.NavigateTo("/chat");
+        }
+    }
+}

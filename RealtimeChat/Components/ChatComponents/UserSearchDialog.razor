@@ -1,0 +1,157 @@
+﻿@inject IChatService ChatService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Style="max-width: 400px;">
+            <MudText Typo="Typo.h6" GutterBottom="true">Invite User to Room</MudText>
+            
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="searchTerm" 
+                                 Label="Search Users" 
+                                 Variant="Variant.Outlined"
+                                 Adornment="Adornment.Start"
+                                 AdornmentIcon="@Icons.Material.Filled.Search"
+                                 OnKeyUp="@SearchUsers"
+                                 Immediate="true"
+                                 Placeholder="Type to search users..." />
+                </MudItem>
+                
+                <MudItem xs="12">
+                    @if (isSearching)
+                    {
+                        <div class="d-flex justify-center pa-4">
+                            <MudProgressCircular Indeterminate="true" />
+                        </div>
+                    }
+                    else if (searchResults.Any())
+                    {
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">Search Results:</MudText>
+                        <MudList T="ApplicationUser" Clickable="true" Dense="true">
+                            @foreach (var user in searchResults)
+                            {
+                                <MudListItem OnClick="@(() => SelectUser(user))">
+                                    <div class="d-flex align-center justify-space-between">
+                                        <div class="d-flex align-center">
+                                            <MudAvatar Size="Size.Small" Class="mr-2">
+                                                @GetInitials(user)
+                                            </MudAvatar>
+                                            <div>
+                                                <MudText>@(user.DisplayName ?? user.UserName)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                    @user.Email
+                                                </MudText>
+                                            </div>
+                                        </div>
+                                        
+                                        <MudIconButton Icon="@Icons.Material.Filled.PersonAdd" 
+                                                      Size="Size.Small" 
+                                                      Color="Color.Primary" />
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(searchTerm) && !isSearching)
+                    {
+                        <MudAlert Severity="Severity.Info">
+                            No users found matching "@searchTerm"
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary" Align="Align.Center" Class="pa-4">
+                            Start typing to search for users
+                        </MudText>
+                    }
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int RoomId { get; set; }
+    
+    private string searchTerm = string.Empty;
+    private List<ApplicationUser> searchResults = new();
+    private bool isSearching = false;
+    private Timer? searchTimer;
+    
+    private void Cancel() => MudDialog.Cancel();
+    
+    private async Task SearchUsers()
+    {
+        // Debounce search
+        searchTimer?.Dispose();
+        searchTimer = new Timer(async _ => await PerformSearch(), null, 300, Timeout.Infinite);
+    }
+    
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Length < 2)
+        {
+            searchResults.Clear();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+        
+        isSearching = true;
+        await InvokeAsync(StateHasChanged);
+        
+        try
+        {
+            searchResults = await ChatService.SearchUsersAsync(searchTerm);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error searching users: {ex.Message}", Severity.Error);
+            searchResults.Clear();
+        }
+        finally
+        {
+            isSearching = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    
+    private async Task SelectUser(ApplicationUser user)
+    {
+        try
+        {
+            var success = await ChatService.JoinRoomAsync(RoomId, user.Id);
+            
+            if (success)
+            {
+                Snackbar.Add($"{user.DisplayName ?? user.UserName} has been invited to the room!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(user));
+            }
+            else
+            {
+                Snackbar.Add($"{user.DisplayName ?? user.UserName} is already a member of this room.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error inviting user: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private string GetInitials(ApplicationUser user)
+    {
+        var name = user.DisplayName ?? user.UserName ?? "?";
+        return name.Length > 0 ? name[0].ToString().ToUpper() : "?";
+    }
+    
+    public void Dispose()
+    {
+        searchTimer?.Dispose();
+    }
+}
+

@@ -1,0 +1,114 @@
+﻿@page "/private-chat/{RecipientId}"
+@using RealtimeChat.Components.ChatComponents
+@inject IChatService ChatService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="chat-container">
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" sm="8">
+                <div class="d-flex align-center">
+                    <MudAvatar Color="Color.Secondary" Class="mr-3">
+                        @GetInitials(recipient)
+                    </MudAvatar>
+                    <div>
+                        <MudText Typo="Typo.h4">
+                            @(recipient?.DisplayName ?? recipient?.UserName ?? "Loading...")
+                        </MudText>
+                        <MudBadge Color="@(recipient?.IsOnline == true ? Color.Success : Color.Error)"
+                                  Dot="true"
+                                  Overlap="true"
+                                  Class="mr-2">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                @(recipient?.IsOnline == true ? "Online" : recipient?.LastSeen != null ? $"Last seen {GetLastSeenText(recipient.LastSeen)}" : "Offline")
+                            </MudText>
+                        </MudBadge>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="/chat">
+                    Back to Rooms
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 message-container" Elevation="1">
+        <MessageDisplay RecipientId="@RecipientId" IsPrivateChat="true" />
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mt-3" Elevation="1">
+        <MessageInput RecipientId="@RecipientId" IsPrivateChat="true" />
+    </MudPaper>
+</MudContainer>
+
+<style>
+    .chat-container {
+        height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message-container {
+        height: calc(100vh - 350px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+</style>
+
+@code {
+    [Parameter] public string RecipientId { get; set; } = string.Empty;
+    private ApplicationUser? recipient;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // Load recipient user
+            recipient = await UserManager.FindByIdAsync(RecipientId);
+        }
+        else
+        {
+            NavigationManager.NavigateTo("Account/Login");
+        }
+    }
+
+    private string GetInitials(ApplicationUser? user)
+    {
+        if (user == null) return "?";
+
+        var name = user.DisplayName ?? user.UserName ?? "?";
+        return name.Length > 0 ? name[0].ToString().ToUpper() : "?";
+    }
+
+    private string GetLastSeenText(DateTime lastSeen)
+    {
+        var timeSpan = DateTime.UtcNow - lastSeen;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} minutes ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} hours ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} days ago";
+
+        return lastSeen.ToString("MMM dd, yyyy");
+    }
+}
+
