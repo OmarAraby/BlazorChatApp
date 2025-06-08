@@ -12,6 +12,7 @@ using RealtimeChat.Hubs;
 using RealtimeChat.Models;
 using RealtimeChat.Services;
 using System.Security.Claims;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,32 +20,34 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Register the HubConnection with authentication
+// Register HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
-    var authenticationStateProvider = sp.GetRequiredService<AuthenticationStateProvider>();
-    var hubConnectionBuilder = new HubConnectionBuilder()
+    var httpContextAccessor = sp.GetRequiredService<IHttpContextAccessor>();
+    var hubConnection = new HubConnectionBuilder()
         .WithUrl(navigationManager.ToAbsoluteUri("/chathub"), options =>
         {
-            options.AccessTokenProvider = async () =>
+            var authCookie = httpContextAccessor.HttpContext?.Request.Cookies[".AspNetCore.Identity.Application"];
+            if (!string.IsNullOrEmpty(authCookie))
             {
-                var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
-                var user = authState.User;
-                if (user?.Identity?.IsAuthenticated == true)
-                {
-                    // In a server-side Blazor app with Identity, the authentication cookie is automatically sent
-                    // with the request if the hub is behind the authentication middleware. No additional token
-                    // is needed here, but we can still set an empty token to satisfy the option.
-                    return null; // Cookie authentication handles this
-                }
-                return null;
-            };
+                var baseUri = new Uri(navigationManager.BaseUri);
+                string domain = !string.IsNullOrEmpty(baseUri.Host) ? baseUri.Host : "localhost";
+                options.Cookies.Add(new Cookie(
+                    ".AspNetCore.Identity.Application",
+                    authCookie,
+                    "/",
+                    domain
+                ));
+            }
         })
+        .WithAutomaticReconnect() // Enable automatic reconnection
         .Build();
-    return hubConnectionBuilder;
-});
 
+    return hubConnection;
+});
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
@@ -122,7 +125,6 @@ using (var scope = app.Services.CreateScope())
 app.Run();
 
 #region Seeding
-// Database seeding method (unchanged)
 async Task SeedDataAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
 {
     await context.Database.EnsureCreatedAsync();

@@ -1,4 +1,9 @@
-﻿@inject IChatService ChatService
+﻿@using RealtimeChat.Data
+@using RealtimeChat.Dtos
+@using RealtimeChat.Hubs
+@using RealtimeChat.Models
+@using RealtimeChat.Services
+@inject IChatService ChatService
 @inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -103,7 +108,6 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             await LoadMessages();
             await SetupSignalR();
         }
@@ -124,28 +128,56 @@
 
     private async Task LoadMessages()
     {
-        if (IsPrivateChat && RecipientId != null && currentUserId != null)
+        try
         {
-            messages = await ChatService.GetPrivateMessagesAsync(currentUserId, RecipientId);
+            if (IsPrivateChat && RecipientId != null && currentUserId != null)
+            {
+                messages = await ChatService.GetPrivateMessagesAsync(currentUserId, RecipientId);
+            }
+            else
+            {
+                messages = await ChatService.GetRoomMessagesAsync(RoomId);
+            }
+            StateHasChanged();
         }
-        else
+        catch (Exception ex)
         {
-            messages = await ChatService.GetRoomMessagesAsync(RoomId);
+            Console.WriteLine($"Error loading messages: {ex.Message}");
         }
-
-        StateHasChanged();
     }
 
     private async Task SetupSignalR()
     {
         if (HubConnection.State == HubConnectionState.Disconnected)
         {
-            await HubConnection.StartAsync();
+            try
+            {
+                HubConnection.Closed += async (error) =>
+                {
+                    Console.WriteLine("Connection lost. Reconnecting...");
+                    await Task.Delay(new Random().Next(0, 5) * 1000);
+                    await HubConnection.StartAsync();
+                    if (!IsPrivateChat)
+                    {
+                        await HubConnection.SendAsync("JoinRoom", RoomId);
+                    }
+                };
+
+                await HubConnection.StartAsync();
+                if (!IsPrivateChat)
+                {
+                    await HubConnection.SendAsync("JoinRoom", RoomId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error connecting to SignalR: {ex.Message}");
+                return;
+            }
         }
 
         if (IsPrivateChat)
         {
-            // For private chat, we listen for private messages
             HubConnection.On<dynamic>("ReceivePrivateMessage", async (messageData) =>
             {
                 if ((messageData.SenderId == currentUserId && messageData.RecipientId == RecipientId) ||
@@ -157,10 +189,7 @@
         }
         else
         {
-            // For room chat, we join the room and listen for room messages
-            await HubConnection.SendAsync("JoinRoom", RoomId);
-
-            HubConnection.On<dynamic>("ReceiveRoomMessage", async (messageData) =>
+            HubConnection.On<MessageDto>("ReceiveRoomMessage", async (messageData) =>
             {
                 if (messageData.RoomId == RoomId)
                 {
@@ -170,11 +199,10 @@
         }
     }
 
-    private async Task AddNewMessage(dynamic messageData)
+    private async Task AddNewMessage(MessageDto messageData)
     {
         try
         {
-            // Convert dynamic to Message object
             var newMessage = new Message
             {
                 Id = messageData.Id,
@@ -199,7 +227,7 @@
             }
 
             messages.Add(newMessage);
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
             await ScrollToBottom();
         }
         catch (Exception ex)
@@ -231,7 +259,6 @@
             var colors = new[] { Color.Primary, Color.Secondary, Color.Tertiary, Color.Info, Color.Success, Color.Warning };
             userColors[userId] = colors[random.Next(colors.Length)];
         }
-
         return userColors[userId];
     }
 

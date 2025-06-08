@@ -157,3 +157,4 @@ D:\iti-9-month\Blazor\Lab\RealtimeChat\RealtimeChat\obj\Debug\net8.0\RealtimeCha
 D:\iti-9-month\Blazor\Lab\RealtimeChat\RealtimeChat\obj\Debug\net8.0\RealtimeChat.genruntimeconfig.cache
 D:\iti-9-month\Blazor\Lab\RealtimeChat\RealtimeChat\obj\Debug\net8.0\ref\RealtimeChat.dll
 D:\iti-9-month\Blazor\Lab\RealtimeChat\RealtimeChat\obj\Debug\net8.0\staticwebassets.build.json.cache
+D:\iti-9-month\Blazor\Lab\RealtimeChat\RealtimeChat\obj\Debug\net8.0\RealtimeChat.sourcelink.json

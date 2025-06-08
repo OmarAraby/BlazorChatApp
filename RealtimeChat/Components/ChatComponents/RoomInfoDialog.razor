@@ -3,7 +3,7 @@
 <MudDialog>
     <DialogContent>
         <MudContainer Style="max-width: 500px;">
-            <MudText Typo="Typo.h6" GutterBottom="true">Room Information</MudText>
+            @* <MudText Typo="Typo.h6" GutterBottom="true">Room Information</MudText> *@
 
             <MudGrid>
                 <MudItem xs="12" Class="d-flex align-center">
@@ -43,7 +43,7 @@
                             <MudListItem>
                                 <div class="d-flex align-center justify-space-between">
                                     <div class="d-flex align-center">
-                                        <MudBadge Color="@(member.User.IsOnline? Color.Success: Color.Error)"
+                                        <MudBadge BadgeClass="ml-4" Color="@(member.User.IsOnline? Color.Success: Color.Success)"
                                                   Dot="true"
                                                   Overlap="true"
                                                   Class="mr-2">

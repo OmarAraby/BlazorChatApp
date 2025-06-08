@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using RealtimeChat.Data;
+using RealtimeChat.Dtos;
 using RealtimeChat.Models;
 using System.Text.RegularExpressions;
 
@@ -27,7 +28,6 @@ namespace RealtimeChat.Hubs
 
             if (user == null) return;
 
-            // Check if user is member of the room
             var isMember = await _context.ChatRoomMembers
                 .AnyAsync(crm => crm.UserId == userId && crm.ChatRoomId == roomId);
 
@@ -45,23 +45,18 @@ namespace RealtimeChat.Hubs
             _context.Messages.Add(chatMessage);
             await _context.SaveChangesAsync();
 
-            // Load the message with sender info
-            var messageWithSender = await _context.Messages
-                .Include(m => m.Sender)
-                .FirstAsync(m => m.Id == chatMessage.Id);
-
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{roomId}");
-            await Clients.Group($"Room_{roomId}").SendAsync("ReceiveRoomMessage", new
+            var messageDto = new MessageDto
             {
-                Id = messageWithSender.Id,
-                Content = messageWithSender.Content,
-                SenderName = messageWithSender.Sender.DisplayName ?? messageWithSender.Sender.UserName,
-                SenderId = messageWithSender.SenderId,
-                SentAt = messageWithSender.SentAt,
+                Id = chatMessage.Id,
+                Content = chatMessage.Content,
+                SenderId = chatMessage.SenderId,
+                SenderName = user.DisplayName ?? user.Email!,
+                SentAt = chatMessage.SentAt,
                 RoomId = roomId
-            });
-        }
+            };
 
+            await Clients.Group($"Room_{roomId}").SendAsync("ReceiveRoomMessage", messageDto);
+        }
         public async Task SendPrivateMessage(string recipientId, string message)
         {
             var senderId = Context.UserIdentifier;

@@ -1,5 +1,4 @@
-﻿@page "/confirm-dialog"
-
+﻿
 <MudDialog>
     <DialogContent>
         <MudText>@ContentText</MudText>
@@ -11,7 +10,7 @@
 </MudDialog>
 
 @code {
-    private IMudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public string ContentText { get; set; } = "Are you sure?";
     [Parameter] public string ButtonText { get; set; } = "Confirm";
@@ -20,4 +19,3 @@
     void Submit() => MudDialog.Close(DialogResult.Ok(true));
     void Cancel() => MudDialog.Cancel();
 }
-

@@ -1,5 +1,10 @@
 ﻿@page "/chat/{RoomId:int}"
 @using RealtimeChat.Components.ChatComponents
+@using RealtimeChat.Data
+@using RealtimeChat.Dtos
+@using RealtimeChat.Hubs
+@using RealtimeChat.Models
+@using RealtimeChat.Services
 @inject IChatService ChatService
 @inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -73,22 +78,7 @@
                 </div>
             </MudPaper>
 
-            <MudPaper Class="pa-4 mt-3" Elevation="1">
-                <MudGrid>
-                    <MudItem xs="12">
-                        <MudTextField @bind-Value="newMessage"
-                                      Label="Type a message"
-                                      Variant="Variant.Outlined"
-                                      Adornment="Adornment.End"
-                                      AdornmentIcon="@Icons.Material.Filled.Send"
-                                      OnAdornmentClick="SendMessage"
-                                      OnKeyDown="@HandleKeyPress"
-                                      Immediate="true"
-                                      Lines="3"
-                                      Class="message-input" />
-                    </MudItem>
-                </MudGrid>
-            </MudPaper>
+            <MessageInput RoomId="RoomId" />
         </MudItem>
 
         <MudItem xs="12" sm="3">
@@ -97,19 +87,15 @@
                     <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
                     Members (@(roomMembers.Count))
                 </MudText>
-
                 <MudList T="ChatRoomMember" Dense="true" Clickable="true">
                     @foreach (var member in roomMembers)
                     {
                         <MudListItem Icon="@Icons.Material.Filled.Person">
                             <div class="d-flex align-center">
-                                <MudBadge BadgeClass="ml-4" Color="@(member.User.IsOnline? Color.Success: Color.Success)"
-                                          Dot="true"
-                                          Overlap="true"
-                                          Class="mr-2">
+                                <MudBadge BadgeClass="ml-4" Color="@(member.User.IsOnline? Color.Success: Color.Default)"
+                                          Dot="true" Overlap="true" Class="mr-2">
                                     <MudText>@(member.User.DisplayName ?? member.User.UserName)</MudText>
                                 </MudBadge>
-
                                 @if (member.IsAdmin)
                                 {
                                     <MudChip T="ChatRoomMember" Size="Size.Small" Color="Color.Primary" Class="ml-2">Admin</MudChip>
@@ -165,10 +151,6 @@
         white-space: pre-wrap;
         word-break: break-word;
     }
-
-    .message-input {
-        width: 100%;
-    }
 </style>
 
 @code {
@@ -176,7 +158,6 @@
     private ChatRoom? room;
     private List<Message> messages = new();
     private List<ChatRoomMember> roomMembers = new();
-    private string newMessage = string.Empty;
     private string? currentUserId;
     private ElementReference messageContainerRef;
 
@@ -188,7 +169,6 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             await LoadRoomData();
             await SetupSignalR();
         }
@@ -200,7 +180,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender || messages.Any())
         {
             await ScrollToBottom();
         }
@@ -212,13 +192,7 @@
         {
             room = await ChatService.GetRoomAsync(RoomId);
             messages = await ChatService.GetRoomMessagesAsync(RoomId);
-
-            // Load room members
-            if (room != null)
-            {
-                roomMembers = room.Members.ToList();
-            }
-
+            roomMembers = room?.Members.ToList() ?? new List<ChatRoomMember>();
             StateHasChanged();
             await ScrollToBottom();
         }
@@ -234,7 +208,18 @@
         {
             try
             {
+                // Add reconnection logic
+                HubConnection.Closed += async (error) =>
+                {
+                    Snackbar.Add("Connection lost. Reconnecting...", Severity.Warning);
+                    await Task.Delay(new Random().Next(0, 5) * 1000);
+                    await HubConnection.StartAsync();
+                    await HubConnection.SendAsync("JoinRoom", RoomId);
+                    Snackbar.Add("Reconnected to chat!", Severity.Success);
+                };
+
                 await HubConnection.StartAsync();
+                await HubConnection.SendAsync("JoinRoom", RoomId);
             }
             catch (Exception ex)
             {
@@ -243,78 +228,75 @@
             }
         }
 
-        await HubConnection.SendAsync("JoinRoom", RoomId);
+        HubConnection.On<MessageDto>("ReceiveRoomMessage", async (messageData) =>
+        {
+            messages.Add(new Message
+            {
+                Id = messageData.Id,
+                Content = messageData.Content,
+                SenderId = messageData.SenderId,
+                SentAt = messageData.SentAt,
+                ChatRoomId = messageData.RoomId,
+                Sender = new ApplicationUser { Id = messageData.SenderId, DisplayName = messageData.SenderName }
+            });
+            await InvokeAsync(StateHasChanged);
+            await ScrollToBottom();
+        });
+    }
 
-        HubConnection.On<dynamic>("ReceiveRoomMessage", async (messageData) =>
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("scrollToBottom", messageContainerRef);
+        }
+        catch { /* Ignore errors */ }
+    }
+
+    private async Task ShowRoomInfo()
+    {
+        if (room == null) return;
+        var parameters = new DialogParameters { ["Room"] = room };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        await DialogService.ShowAsync<RoomInfoDialog>("Room Information", parameters, options);
+    }
+
+    private async Task InviteUser()
+    {
+        var parameters = new DialogParameters { ["RoomId"] = RoomId };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<UserSearchDialog>("Invite User", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadRoomData();
+            Snackbar.Add("User invited successfully!", Severity.Success);
+        }
+    }
+
+    private async Task LeaveRoom()
+    {
+        var parameters = new DialogParameters
+        {
+            ["ContentText"] = "Are you sure you want to leave this room?",
+            ["ButtonText"] = "Leave Room",
+            ["Color"] = Color.Error
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && currentUserId != null)
         {
             try
             {
-                // Convert dynamic to Message object
-                var newMessage = new Message
-                {
-                    Id = messageData.Id,
-                    Content = messageData.Content,
-                    SenderId = messageData.SenderId,
-                    SentAt = messageData.SentAt,
-                    Sender = new ApplicationUser
-                    {
-                        Id = messageData.SenderId,
-                        DisplayName = messageData.SenderName
-                    }
-                };
-
-                messages.Add(newMessage);
-                StateHasChanged();
-                await ScrollToBottom();
+                await HubConnection.SendAsync("LeaveRoom", RoomId);
+                NavigationManager.NavigateTo("/chat");
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error processing message: {ex.Message}", Severity.Error);
+                Snackbar.Add($"Error leaving room: {ex.Message}", Severity.Error);
             }
-        });
-
-        // Handle user online/offline events
-        HubConnection.On<string>("UserOnline", (userId) =>
-        {
-            var member = roomMembers.FirstOrDefault(m => m.UserId == userId);
-            if (member != null)
-            {
-                member.User.IsOnline = true;
-                StateHasChanged();
-            }
-        });
-
-        HubConnection.On<string>("UserOffline", (userId) =>
-        {
-            var member = roomMembers.FirstOrDefault(m => m.UserId == userId);
-            if (member != null)
-            {
-                member.User.IsOnline = false;
-                StateHasChanged();
-            }
-        });
-    }
-
-    private async Task SendMessage()
-    {
-        if (string.IsNullOrWhiteSpace(newMessage)) return;
-
-        try
-        {
-            await HubConnection.SendAsync("SendMessageToRoom", RoomId, newMessage);
-            newMessage = string.Empty;
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error sending message: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private async Task HandleKeyPress(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter" && !e.ShiftKey)
-        {
-            await SendMessage();
         }
     }
 
@@ -332,62 +314,5 @@
     {
         var name = user.DisplayName ?? user.UserName ?? "?";
         return name.Length > 0 ? name[0].ToString().ToUpper() : "?";
-    }
-
-    private async Task ScrollToBottom()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("scrollToBottom", messageContainerRef);
-        }
-        catch { /* Ignore errors */ }
-    }
-
-    private async Task ShowRoomInfo()
-    {
-        if (room == null) return;
-
-        var parameters = new DialogParameters { ["Room"] = room };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-
-        await DialogService.ShowAsync<RoomInfoDialog>("Room Information", parameters, options);
-    }
-
-    private async Task InviteUser()
-    {
-        var parameters = new DialogParameters { ["RoomId"] = RoomId };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small };
-
-        var dialog = await DialogService.ShowAsync<UserSearchDialog>("Invite User", parameters, options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-            await LoadRoomData(); // Refresh member list
-            Snackbar.Add("User invited successfully!", Severity.Success);
-        }
-    }
-
-    private async Task LeaveRoom()
-    {
-        var parameters = new DialogParameters
-        {
-            ["ContentText"] = "Are you sure you want to leave this room?",
-            ["ButtonText"] = "Leave Room",
-            ["Color"] = Color.Error
-        };
-
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
-
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm", parameters, options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-            // Logic to leave room would go here
-
-            // Navigate back to chat rooms list
-            NavigationManager.NavigateTo("/chat");
-        }
     }
 }
