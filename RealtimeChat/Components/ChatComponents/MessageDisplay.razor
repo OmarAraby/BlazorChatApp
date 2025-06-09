@@ -7,6 +7,7 @@
 @inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ISnackbar Snackbar
 
 <div class="message-display-container">
     <div class="message-list" @ref="messageContainerRef">
@@ -15,14 +16,14 @@
             @foreach (var message in messages)
             {
                 <div class="@GetMessageClass(message)">
-                    <MudCard Elevation="0" Class="@GetMessageCardClass(message)">
-                        <MudCardContent Class="py-2 px-3">
+                    <MudCard Elevation="0" Class="@GetMessageCardClass(message)" Style="background-color: var(--mud-palette-background) !important;">
+                        <MudCardContent Class="py-2 px-3 d-flex flex-column">
                             <MudGrid>
                                 <MudItem xs="12" Class="d-flex align-center">
                                     <MudAvatar Size="Size.Small" Class="mr-2" Color="@GetAvatarColor(message.Sender.Id)">
                                         @GetInitials(message.Sender)
                                     </MudAvatar>
-                                    <MudText Typo="Typo.body1" Class="font-weight-bold">
+                                    <MudText Typo="Typo.body1" Class="font-weight-bold" Style="color: var(--mud-palette-text-contrast) !important;">
                                         @(message.Sender.DisplayName ?? message.Sender.UserName)
                                     </MudText>
                                     <MudText Typo="Typo.caption" Class="ml-2" Color="Color.Secondary">
@@ -30,7 +31,7 @@
                                     </MudText>
                                 </MudItem>
                                 <MudItem xs="12">
-                                    <MudText Typo="Typo.body1" Class="message-content">
+                                    <MudText Typo="Typo.body1" Class="message-content" Style="color: var(--mud-palette-text-contrast) !important;">
                                         @message.Content
                                     </MudText>
                                 </MudItem>
@@ -77,10 +78,13 @@
     .message-card {
         max-width: 80%;
         border-radius: 12px;
+        background-color: var(--mud-palette-background) !important; /* Override any custom background */
+        color: var(--mud-palette-text-contrast) !important; /* Ensure readable text */
     }
 
     .message-card-mine {
-        background-color: var(--mud-palette-primary-lighten);
+        background-color: var(--mud-palette-primary) !important; /* Theme-aware highlight */
+        color: var(--mud-palette-text-contrast) !important; /* High-contrast text */
     }
 
     .message-content {
@@ -143,6 +147,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading messages: {ex.Message}");
+            Snackbar.Add($"Error loading messages: {ex.Message}", Severity.Error);
         }
     }
 
@@ -172,6 +177,7 @@
             catch (Exception ex)
             {
                 Console.WriteLine($"Error connecting to SignalR: {ex.Message}");
+                Snackbar.Add($"Error connecting to chat: {ex.Message}", Severity.Error);
                 return;
             }
         }
@@ -233,6 +239,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error processing message: {ex.Message}");
+            Snackbar.Add($"Error processing message: {ex.Message}", Severity.Error);
         }
     }
 
@@ -266,8 +273,13 @@
     {
         try
         {
+            await Task.Delay(50); // Brief delay to ensure DOM is updated
             await JS.InvokeVoidAsync("scrollToBottom", messageContainerRef);
         }
-        catch { /* Ignore errors */ }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Scroll error: {ex.Message}");
+            Snackbar.Add($"Scroll error: {ex.Message}", Severity.Warning);
+        }
     }
 }

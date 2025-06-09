@@ -76,6 +76,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+builder.Services.AddHttpClient();
 // Add MudBlazor services.
 builder.Services.AddMudServices();
 builder.Services.AddScoped(x => new MudTheme());
@@ -115,69 +116,69 @@ app.MapRazorComponents<App>()
 
 app.MapAdditionalIdentityEndpoints();
 
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    await SeedDataAsync(context, userManager);
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+//    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+//    await SeedDataAsync(context, userManager);
+//}
 
 app.Run();
 
-#region Seeding
-async Task SeedDataAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
-{
-    await context.Database.EnsureCreatedAsync();
+//#region Seeding
+//async Task SeedDataAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+//{
+//    await context.Database.EnsureCreatedAsync();
 
-    // Seed users
-    if (!context.Users.Any())
-    {
-        var users = new[]
-        {
-            new ApplicationUser { UserName = "alice@example.com", Email = "alice@example.com", DisplayName = "Alice Johnson" },
-            new ApplicationUser { UserName = "bob@example.com", Email = "bob@example.com", DisplayName = "Bob Smith" },
-            new ApplicationUser { UserName = "charlie@example.com", Email = "charlie@example.com", DisplayName = "Charlie Brown" }
-        };
+//    // Seed users
+//    if (!context.Users.Any())
+//    {
+//        var users = new[]
+//        {
+//            new ApplicationUser { UserName = "alice@example.com", Email = "alice@example.com", DisplayName = "Alice Johnson" },
+//            new ApplicationUser { UserName = "bob@example.com", Email = "bob@example.com", DisplayName = "Bob Smith" },
+//            new ApplicationUser { UserName = "charlie@example.com", Email = "charlie@example.com", DisplayName = "Charlie Brown" }
+//        };
 
-        foreach (var user in users)
-        {
-            await userManager.CreateAsync(user, "Password123!");
-        }
-    }
+//        foreach (var user in users)
+//        {
+//            await userManager.CreateAsync(user, "Password123!");
+//        }
+//    }
 
-    // Seed chat rooms
-    if (!context.ChatRooms.Any())
-    {
-        var firstUser = await userManager.FindByEmailAsync("alice@example.com");
-        if (firstUser != null)
-        {
-            var rooms = new[]
-            {
-                new ChatRoom { Name = "General", Description = "General discussion", IsPrivate = false, CreatedById = firstUser.Id },
-                new ChatRoom { Name = "Tech Talk", Description = "Technology discussions", IsPrivate = false, CreatedById = firstUser.Id },
-                new ChatRoom { Name = "Random", Description = "Random conversations", IsPrivate = false, CreatedById = firstUser.Id }
-            };
+//    // Seed chat rooms
+//    if (!context.ChatRooms.Any())
+//    {
+//        var firstUser = await userManager.FindByEmailAsync("alice@example.com");
+//        if (firstUser != null)
+//        {
+//            var rooms = new[]
+//            {
+//                new ChatRoom { Name = "General", Description = "General discussion", IsPrivate = false, CreatedById = firstUser.Id },
+//                new ChatRoom { Name = "Tech Talk", Description = "Technology discussions", IsPrivate = false, CreatedById = firstUser.Id },
+//                new ChatRoom { Name = "Random", Description = "Random conversations", IsPrivate = false, CreatedById = firstUser.Id }
+//            };
 
-            context.ChatRooms.AddRange(rooms);
-            await context.SaveChangesAsync();
+//            context.ChatRooms.AddRange(rooms);
+//            await context.SaveChangesAsync();
 
-            // Add all users to all public rooms
-            var allUsers = await userManager.Users.ToListAsync();
-            foreach (var room in rooms)
-            {
-                foreach (var user in allUsers)
-                {
-                    context.ChatRoomMembers.Add(new ChatRoomMember
-                    {
-                        UserId = user.Id,
-                        ChatRoomId = room.Id,
-                        IsAdmin = user.Id == firstUser.Id
-                    });
-                }
-            }
+//            // Add all users to all public rooms
+//            var allUsers = await userManager.Users.ToListAsync();
+//            foreach (var room in rooms)
+//            {
+//                foreach (var user in allUsers)
+//                {
+//                    context.ChatRoomMembers.Add(new ChatRoomMember
+//                    {
+//                        UserId = user.Id,
+//                        ChatRoomId = room.Id,
+//                        IsAdmin = user.Id == firstUser.Id
+//                    });
+//                }
+//            }
 
-            await context.SaveChangesAsync();
-        }
-    }
-}
-#endregion
+//            await context.SaveChangesAsync();
+//        }
+//    }
+//}
+//#endregion

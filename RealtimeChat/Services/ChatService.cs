@@ -31,6 +31,7 @@ namespace RealtimeChat.Services
                 .ThenInclude(cr => cr.Members)
                 .ThenInclude(m => m.User)
                 .Select(crm => crm.ChatRoom)
+                .Where(cr => !cr.IsPrivate || cr.CreatedById == userId || cr.Members.Any(m => m.UserId == userId))
                 .OrderBy(r => r.Name)
                 .ToListAsync();
         }
@@ -38,6 +39,8 @@ namespace RealtimeChat.Services
         public async Task<ChatRoom> GetRoomAsync(int roomId)
         {
             return await _context.ChatRooms
+                .Include(r => r.Members) // Eager load Members
+                .ThenInclude(m => m.User) // Eager load User details for each member
                 .FirstOrDefaultAsync(r => r.Id == roomId) ?? throw new Exception("Room not found");
         }
         public async Task<List<Message>> GetRoomMessagesAsync(int roomId, int page = 1, int pageSize = 50)

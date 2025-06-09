@@ -1,4 +1,7 @@
-﻿@inject IChatService ChatService
+﻿@using RealtimeChat.Data
+@using RealtimeChat.Models
+@using RealtimeChat.Services
+@inject IChatService ChatService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ISnackbar Snackbar
 
@@ -14,7 +17,9 @@
                                   Variant="Variant.Outlined"
                                   Required="true"
                                   RequiredError="Room name is required"
-                                  MaxLength="50" />
+                                  MaxLength="50"
+                                  Immediate="true"
+                                  OnValueChanged="@(() => StateHasChanged())" />
                 </MudItem>
 
                 <MudItem xs="12">
@@ -22,13 +27,15 @@
                                   Label="Description (Optional)"
                                   Variant="Variant.Outlined"
                                   Lines="3"
-                                  MaxLength="200" />
+                                  MaxLength="200"
+                                  Immediate="true" />
                 </MudItem>
 
                 <MudItem xs="12">
                     <MudSwitch T="bool" @bind-Checked="isPrivate"
                                Label="Private Room"
-                               Color="Color.Primary" />
+                               Color="Color.Primary"
+                               ValueChanged="@(value => { isPrivate = value; StateHasChanged(); })" />
                     <MudText Typo="Typo.caption" Color="Color.Secondary">
                         Private rooms require invitation to join
                     </MudText>
@@ -66,13 +73,12 @@
 </MudDialog>
 
 @code {
-    private IMudDialogInstance MudDialog { get; set; }
-
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
 
     private string roomName = string.Empty;
     private string roomDescription = string.Empty;
-    private bool isPrivate = false;
-    private bool isCreating = false;
+    private bool isPrivate;
+    private bool isCreating;
     private string? currentUserId;
 
     protected override async Task OnInitializedAsync()
@@ -84,30 +90,59 @@
         {
             currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
+        else
+        {
+            Snackbar.Add("You must be logged in to create a room.", Severity.Error);
+            MudDialog.Cancel();
+        }
     }
 
-    private void Cancel() => MudDialog.Cancel();
+    private void Cancel()
+    {
+        if (MudDialog != null)
+        {
+            MudDialog.Cancel();
+        }
+        else
+        {
+            Snackbar.Add("Error: Dialog instance not available.", Severity.Error);
+        }
+    }
 
     private async Task CreateRoom()
     {
-        if (string.IsNullOrWhiteSpace(roomName) || currentUserId == null) return;
+        if (string.IsNullOrWhiteSpace(roomName) || currentUserId == null)
+        {
+            Snackbar.Add("Room name is required and user must be authenticated.", Severity.Error);
+            return;
+        }
 
         isCreating = true;
         StateHasChanged();
 
         try
         {
+            // Log the input values for debugging
+            Console.WriteLine($"Creating room: Name={roomName}, Description={roomDescription}, IsPrivate={isPrivate}, CreatedById={currentUserId}");
+
             var newRoom = await ChatService.CreateRoomAsync(
                 roomName.Trim(),
                 string.IsNullOrWhiteSpace(roomDescription) ? null : roomDescription.Trim(),
                 isPrivate,
                 currentUserId);
 
+            if (newRoom.IsPrivate != isPrivate)
+            {
+                Console.WriteLine($"Warning: Room created with IsPrivate={newRoom.IsPrivate}, expected {isPrivate}");
+                Snackbar.Add("Warning: Room privacy setting may not have been applied correctly.", Severity.Warning);
+            }
+
             Snackbar.Add($"Room '{newRoom.Name}' created successfully!", Severity.Success);
             MudDialog.Close(DialogResult.Ok(newRoom));
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error creating room: {ex}");
             Snackbar.Add($"Error creating room: {ex.Message}", Severity.Error);
         }
         finally
@@ -117,4 +152,3 @@
         }
     }
 }
-
