@@ -14,6 +14,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ChatRoom> ChatRooms { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<ChatRoomMember> ChatRoomMembers { get; set; }
+    public DbSet<RoomInvitation> RoomInvitations { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -62,5 +64,33 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<ChatRoomMember>()
             .HasIndex(crm => new { crm.UserId, crm.ChatRoomId })
             .IsUnique();
+
+        // Configure RoomInvitation relationships
+        builder.Entity<RoomInvitation>()
+            .HasOne(ri => ri.ChatRoom)
+            .WithMany()
+            .HasForeignKey(ri => ri.ChatRoomId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<RoomInvitation>()
+            .HasOne(ri => ri.Inviter)
+            .WithMany()
+            .HasForeignKey(ri => ri.InviterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<RoomInvitation>()
+            .HasOne(ri => ri.Invitee)
+            .WithMany()
+            .HasForeignKey(ri => ri.InviteeId)
+            .OnDelete(DeleteBehavior.Restrict);
+        // Index for faster invitation queries
+        builder.Entity<RoomInvitation>()
+            .HasIndex(ri => new { ri.InviteeId, ri.Status });
+
+        // Unique constraint to prevent duplicate pending invitations
+        builder.Entity<RoomInvitation>()
+            .HasIndex(ri => new { ri.ChatRoomId, ri.InviteeId, ri.Status })
+            .IsUnique()
+            .HasFilter("[Status] = 0"); // Only for pending invitations
     }
 }
