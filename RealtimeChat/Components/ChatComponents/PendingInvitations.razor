@@ -1,0 +1,102 @@
+﻿@* PendingInvitations.razor *@
+@using RealtimeChat.Data
+@using RealtimeChat.Hubs
+@using RealtimeChat.Services
+@inject IChatService ChatService
+@inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<MudList T="RoomInvitation" Dense="true">
+    @foreach (var invitation in Invitations)
+    {
+        <MudListItem>
+            <MudGrid>
+                <MudItem xs="8">
+                    <MudText Typo="Typo.body1">
+                        Invitation to <strong>@invitation.ChatRoom.Name</strong> from @invitation.Inviter.DisplayName
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Invited on @invitation.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                    </MudText>
+                </MudItem>
+                <MudItem xs="4" Class="d-flex justify-end">
+                    <MudButtonGroup Variant="Variant.Outlined">
+                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => AcceptInvitation(invitation.Id))">
+                            Accept
+                        </MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DeclineInvitation(invitation.Id))">
+                            Decline
+                        </MudButton>
+                    </MudButtonGroup>
+                </MudItem>
+            </MudGrid>
+        </MudListItem>
+    }
+</MudList>
+
+@code {
+    [Parameter] public List<RoomInvitation> Invitations { get; set; } = new();
+    [Parameter] public EventCallback OnInvitationAccepted { get; set; }
+    [Parameter] public EventCallback OnInvitationDeclined { get; set; }
+    private string? currentUserId;
+    private HubConnection _hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _hubConnection = HubConnection; // Assign the injected HubConnection
+            await SetupSignalR();
+        }
+    }
+
+    private async Task SetupSignalR()
+    {
+        if (_hubConnection.State == HubConnectionState.Disconnected)
+        {
+            await _hubConnection.StartAsync();
+        }
+
+        _hubConnection.On<RoomInvitation>("ReceiveRoomInvitation", async (invitation) =>
+        {
+            if (invitation.InviteeId == currentUserId)
+            {
+                Invitations.Add(invitation);
+                await InvokeAsync(StateHasChanged); // Update UI in real-time
+                Snackbar.Add($"New invitation to {invitation.ChatRoom.Name}!", Severity.Info);
+            }
+        });
+    }
+
+    private async Task AcceptInvitation(int invitationId)
+    {
+        if (currentUserId != null && await ChatService.AcceptInvitationAsync(invitationId, currentUserId))
+        {
+            Snackbar.Add("Invitation accepted!", Severity.Success);
+            await HubConnection.SendAsync("AcceptRoomInvitation", invitationId);
+            await OnInvitationAccepted.InvokeAsync();
+        }
+        else
+        {
+            Snackbar.Add("Failed to accept invitation.", Severity.Error);
+        }
+    }
+
+    private async Task DeclineInvitation(int invitationId)
+    {
+        if (currentUserId != null && await ChatService.DeclineInvitationAsync(invitationId, currentUserId))
+        {
+            Snackbar.Add("Invitation declined.", Severity.Success);
+            await OnInvitationDeclined.InvokeAsync();
+        }
+        else
+        {
+            Snackbar.Add("Failed to decline invitation.", Severity.Error);
+        }
+    }
+}

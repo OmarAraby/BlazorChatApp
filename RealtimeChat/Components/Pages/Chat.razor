@@ -1,8 +1,11 @@
 ﻿@page "/chat"
+@using RealtimeChat.Dtos
 @inject IChatService ChatService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
 
 <MudContainer Class="mt-3" MaxWidth="MaxWidth.Large">
     <MudGrid>
@@ -19,28 +22,69 @@
                         </MudText>
                     </MudItem>
                     <MudItem xs="6" sm="6" Class="d-flex h-50 mt-5 justify-end">
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.Add"
-                                   OnClick="OpenCreateRoomDialog">
-                            Create Room
-                        </MudButton>
+                        <MudButtonGroup>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       OnClick="OpenCreateRoomDialog">
+                                Create Room
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Search"
+                                       OnClick="OpenRoomSearchDialog">
+                                Search Rooms
+                            </MudButton>
+                        </MudButtonGroup>
                     </MudItem>
                 </MudGrid>
             </MudPaper>
         </MudItem>
 
+        @if (messageNotifications.Any())
+        {
+            <MudItem xs="12">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        <MudIcon Icon="@Icons.Material.Filled.Notifications" Class="mr-2" />
+                        New Messages (@messageNotifications.Count)
+                    </MudText>
+                    @foreach (var notification in messageNotifications)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mb-2" @onclick="() => NavigateToRoom(notification.RoomId)">
+                            New message in <strong>@notification.RoomName</strong> from @notification.SenderName
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @notification.SentAt.ToLocalTime().ToString("HH:mm")
+                            </MudText>
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudItem>
+        }
+
+        @if (pendingInvitations.Any())
+        {
+            <MudItem xs="12">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        <MudIcon Icon="@Icons.Material.Filled.Notifications" Class="mr-2" />
+                        Notifications (@pendingInvitations.Count)
+                    </MudText>
+                    <PendingInvitations Invitations="pendingInvitations" OnInvitationAccepted="LoadRooms" OnInvitationDeclined="LoadRooms" />
+                </MudPaper>
+            </MudItem>
+        }
+
         <MudItem xs="12">
             <MudPaper Class="pa-4" Elevation="1">
                 <MudText Typo="Typo.h6" GutterBottom="true">Public Rooms</MudText>
-
                 @if (publicRooms.Any())
                 {
                     <MudGrid>
                         @foreach (var room in publicRooms)
                         {
                             <MudItem xs="12" sm="6" md="4">
-                                <MudCard Elevation="2" Class="cursor-pointer hover-card" @onclick="() => SelectRoom(room.Id)">
+                                <MudCard Elevation="2" Class="cursor-pointer hover-card" @onclick="() => ShowRoomInfo(room)">
                                     <MudCardContent>
                                         <MudGrid AlignItems="Center">
                                             <MudItem xs="2">
@@ -63,7 +107,8 @@
                                         <MudButton Variant="Variant.Text"
                                                    Color="Color.Primary"
                                                    StartIcon="@Icons.Material.Filled.Login"
-                                                   OnClick="@(() => SelectRoom(room.Id))">
+                                                   OnClick="@(() => JoinPublicRoom(room.Id))"
+                                                   Disabled="@isRoomMember[room.Id]">
                                             Join Chat
                                         </MudButton>
                                         <MudSpacer />
@@ -85,7 +130,6 @@
                 }
             </MudPaper>
         </MudItem>
-
         @if (userRooms.Any())
         {
             <MudItem xs="12">
@@ -143,7 +187,18 @@
 @code {
     private List<ChatRoom> publicRooms = new();
     private List<ChatRoom> userRooms = new();
+    private List<RoomInvitation> pendingInvitations = new();
+    private List<MessageNotification> messageNotifications = new();
     private string? userId;
+    private Dictionary<int, bool> isRoomMember = new(); // New dictionary to track membership
+
+    private class MessageNotification
+    {
+        public int RoomId { get; set; }
+        public string RoomName { get; set; } = string.Empty;
+        public string SenderName { get; set; } = string.Empty;
+        public DateTime SentAt { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -154,6 +209,7 @@
         {
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             await LoadRooms();
+            await SetupSignalR();
         }
         else
         {
@@ -163,17 +219,114 @@
 
     private async Task LoadRooms()
     {
-        publicRooms = await ChatService.GetPublicRoomsAsync();
-
         if (userId != null)
         {
+            publicRooms = await ChatService.GetPublicRoomsAsync();
             userRooms = await ChatService.GetUserRoomsAsync(userId);
-        }
+            pendingInvitations = await ChatService.GetPendingInvitationsAsync(userId);
 
+            // Update isRoomMember for all public rooms
+            foreach (var room in publicRooms)
+            {
+                isRoomMember[room.Id] = await ChatService.IsRoomMemberAsync(room.Id, userId);
+            }
+        }
         StateHasChanged();
     }
 
+    private async Task SetupSignalR()
+    {
+        if (HubConnection.State == HubConnectionState.Disconnected)
+        {
+            try
+            {
+                await HubConnection.StartAsync();
+                Console.WriteLine("SignalR connection started for user: " + userId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SignalR connection failed: " + ex.Message);
+                Snackbar.Add("Failed to connect to chat service.", Severity.Error);
+                return;
+            }
+        }
+
+        HubConnection.On<RoomInvitation>("ReceiveRoomInvitation", async (invitation) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                Console.WriteLine($"Received invitation for user {userId}, Invitation ID: {invitation.Id}");
+                if (invitation.InviteeId == userId && invitation.Status == InvitationStatus.Pending)
+                {
+                    var fullInvitation = await ChatService.GetInvitationDetailsAsync(invitation.Id);
+                    if (fullInvitation != null)
+                    {
+                        if (!pendingInvitations.Any(i => i.Id == fullInvitation.Id)) // Avoid duplicates
+                        {
+                            pendingInvitations.Add(fullInvitation);
+                            StateHasChanged();
+                            Snackbar.Add($"New invitation to {fullInvitation.ChatRoom.Name} from {fullInvitation.Inviter.DisplayName ?? fullInvitation.Inviter.Email}!", Severity.Info);
+                        }
+
+                        // Auto-remove notification after 5 seconds
+                        await Task.Delay(5000);
+                        await InvokeAsync(() => pendingInvitations.Remove(fullInvitation));
+                        StateHasChanged();
+                    }
+                }
+            });
+        });
+
+        HubConnection.On<MessageDto>("ReceiveRoomMessage", async (message) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                if (userId != null && await ChatService.IsRoomMemberAsync(message.RoomId, userId))
+                {
+                    var room = await ChatService.GetRoomAsync(message.RoomId);
+                    if (room != null)
+                    {
+                        var notification = new MessageNotification
+                        {
+                            RoomId = message.RoomId,
+                            RoomName = room.Name,
+                            SenderName = message.SenderName,
+                            SentAt = message.SentAt
+                        };
+                        messageNotifications.Add(notification);
+                        StateHasChanged();
+                        Snackbar.Add($"New message in {room.Name} from {message.SenderName}!", Severity.Info);
+
+                        // Auto-remove notification after 5 seconds
+                        await Task.Delay(5000);
+                        await InvokeAsync(() => messageNotifications.Remove(notification));
+                        StateHasChanged();
+                    }
+                }
+            });
+        });
+    }
+
     private void SelectRoom(int roomId)
+    {
+        NavigationManager.NavigateTo($"/chat/{roomId}");
+    }
+
+    private async Task JoinPublicRoom(int roomId)
+    {
+        if (userId != null && await ChatService.JoinPublicRoomAsync(roomId, userId))
+        {
+            Snackbar.Add("Successfully joined the room!", Severity.Success);
+            await LoadRooms(); // Refresh room lists
+            NavigationManager.NavigateTo($"/chat/{roomId}");
+        }
+        else
+        {
+            Snackbar.Add("Failed to join the room. It may be private or you’re already a member.", Severity.Warning);
+        }
+    }
+
+    private void NavigateToRoom(int roomId)
     {
         NavigationManager.NavigateTo($"/chat/{roomId}");
     }
@@ -189,6 +342,19 @@
         if (!result.Canceled)
         {
             await LoadRooms(); // Refresh the room list
+        }
+    }
+
+    private async Task OpenRoomSearchDialog()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = await DialogService.ShowAsync<RoomSearchDialog>("Search Rooms", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is ChatRoom selectedRoom)
+        {
+            await JoinPublicRoom(selectedRoom.Id); // Join the selected public room
         }
     }
 

@@ -1,5 +1,4 @@
 ﻿@page "/Account/RegisterConfirmation"
-
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
@@ -12,21 +11,37 @@
 
 <PageTitle>Register confirmation</PageTitle>
 
-<h1>Register confirmation</h1>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" Color="Color.Primary" GutterBottom="true">
+            Register Confirmation
+        </MudText>
 
-<StatusMessage Message="@statusMessage" />
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+            <StatusMessage Message="@statusMessage" />
+        </MudText>
 
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p>Please check your email to confirm your account.</p>
-}
+        @if (emailConfirmationLink is not null)
+        {
+            <MudText Typo="Typo.body1" Class="mb-4">
+                This app does not currently have a real email sender registered. See
+                <MudLink Href="https://aka.ms/aspaccountconf" Target="_blank" Typo="Typo.body1" Color="Color.Info">
+                    these docs
+                </MudLink>
+                for how to configure a real email sender. Normally this would be emailed:
+                <MudLink Href="@emailConfirmationLink" Typo="Typo.body1" Color="Color.Primary">
+                    Click here to confirm your account
+                </MudLink>
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body1" Color="Color.Secondary">
+                Please check your email to confirm your account.
+            </MudText>
+        }
+    </MudPaper>
+</MudContainer>
 
 @code {
     private string? emailConfirmationLink;
@@ -56,7 +71,6 @@ else
         }
         else if (EmailSender is IdentityNoOpEmailSender)
         {
-            // Once you add a real email sender, you should remove this code that lets you confirm the account
             var userId = await UserManager.GetUserIdAsync(user);
             var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));

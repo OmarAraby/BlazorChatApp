@@ -28,7 +28,7 @@
             <MudItem xs="12" sm="4" Class="d-flex justify-end">
                 <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
                     <MudButton OnClick="ShowRoomInfo" StartIcon="@Icons.Material.Filled.Info">Info</MudButton>
-                    <MudButton OnClick="InviteUser" StartIcon="@Icons.Material.Filled.PersonAdd">Invite</MudButton>
+                    <MudButton OnClick="InviteUser" StartIcon="@Icons.Material.Filled.PersonAdd" Disabled="@(!isAdmin)">Invite</MudButton>
                     <MudButton OnClick="LeaveRoom" StartIcon="@Icons.Material.Filled.ExitToApp" Color="Color.Error">Leave</MudButton>
                 </MudButtonGroup>
             </MudItem>
@@ -87,18 +87,20 @@
                     <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
                     Members (@(roomMembers.Count))
                 </MudText>
-                <MudList T="ChatRoomMember" Dense="true" Clickable="true">
+                <MudList T="ApplicationUser" Dense="true" Clickable="true">
                     @foreach (var member in roomMembers)
                     {
-                        <MudListItem Icon="@Icons.Material.Filled.Person">
-                            <div class="d-flex align-center">
-                                <MudBadge BadgeClass="ml-4" Color="@(member.User.IsOnline? Color.Success: Color.Default)"
-                                          Dot="true" Overlap="true" Class="mr-2">
-                                    <MudText>@(member.User.DisplayName ?? member.User.UserName)</MudText>
-                                </MudBadge>
-                                @if (member.IsAdmin)
+                        <MudListItem>
+                            <div class="d-flex align-center justify-space-between">
+                                <div class="d-flex align-center">
+                                    <MudBadge BadgeClass="ml-4" Color="@(member.IsOnline ? Color.Success : Color.Default)"
+                                              Dot="true" Overlap="true" Class="mr-2">
+                                        <MudText>@(member.DisplayName ?? member.UserName)</MudText>
+                                    </MudBadge>
+                                </div>
+                                @if (member.IsOnline)
                                 {
-                                    <MudChip T="ChatRoomMember" Size="Size.Small" Color="Color.Primary" Class="ml-2">Admin</MudChip>
+                                    <MudChip T="ApplicationUser" Size="Size.Small" Color="Color.Success" Class="ml-2">Online</MudChip>
                                 }
                             </div>
                         </MudListItem>
@@ -158,8 +160,9 @@
     [Parameter] public int RoomId { get; set; }
     private ChatRoom? room;
     private List<Message> messages = new();
-    private List<ChatRoomMember> roomMembers = new();
+    private List<ApplicationUser> roomMembers = new();
     private string? currentUserId;
+    private bool isAdmin;
     private ElementReference messageContainerRef;
 
     protected override async Task OnInitializedAsync()
@@ -193,7 +196,8 @@
         {
             room = await ChatService.GetRoomAsync(RoomId);
             messages = await ChatService.GetRoomMessagesAsync(RoomId);
-            roomMembers = room?.Members.ToList() ?? new List<ChatRoomMember>();
+            roomMembers = await ChatService.GetRoomMembersAsync(RoomId);
+            isAdmin = await ChatService.IsRoomAdminAsync(RoomId, currentUserId!);
             StateHasChanged();
             await ScrollToBottom();
         }
@@ -209,7 +213,6 @@
         {
             try
             {
-                // Add reconnection logic
                 HubConnection.Closed += async (error) =>
                 {
                     Snackbar.Add("Connection lost. Reconnecting...", Severity.Warning);
@@ -242,6 +245,18 @@
             });
             await InvokeAsync(StateHasChanged);
             await ScrollToBottom();
+        });
+
+        HubConnection.On("UserJoinedRoom", async (dynamic data) =>
+        {
+            await LoadRoomData();
+            await InvokeAsync(StateHasChanged);
+        });
+
+        HubConnection.On("UserLeftRoom", async (dynamic data) =>
+        {
+            await LoadRoomData();
+            await InvokeAsync(StateHasChanged);
         });
     }
 
@@ -291,7 +306,7 @@
         {
             try
             {
-                await HubConnection.SendAsync("LeaveRoom", RoomId);
+                await HubConnection.SendAsync("LeaveRoomPermanently", RoomId);
                 NavigationManager.NavigateTo("/chat");
             }
             catch (Exception ex)

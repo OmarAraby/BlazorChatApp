@@ -7,6 +7,7 @@ using RealtimeChat.Dtos;
 using RealtimeChat.Models;
 using RealtimeChat.Services;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace RealtimeChat.Hubs
 {
@@ -16,7 +17,6 @@ namespace RealtimeChat.Hubs
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IChatService _chatService;
-
 
         public ChatHub(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IChatService chatService)
         {
@@ -32,9 +32,9 @@ namespace RealtimeChat.Hubs
 
             if (user == null) return;
 
-            // Check if user is a member of the room
             if (!await _chatService.IsRoomMemberAsync(roomId, userId!))
                 return;
+
             var chatMessage = new Message
             {
                 Content = message,
@@ -59,6 +59,7 @@ namespace RealtimeChat.Hubs
 
             await Clients.Group($"Room_{roomId}").SendAsync("ReceiveRoomMessage", messageDto);
         }
+
         public async Task SendPrivateMessage(string recipientId, string message)
         {
             var senderId = Context.UserIdentifier;
@@ -97,8 +98,22 @@ namespace RealtimeChat.Hubs
         {
             var userId = Context.UserIdentifier;
 
-            // Verify user is a member of the room
-            if (await _chatService.IsRoomMemberAsync(roomId, userId!))
+            if (userId == null) return;
+
+            // Allow joining public rooms directly
+            var room = await _chatService.GetRoomAsync(roomId);
+            if (room != null && !room.IsPrivate && !await _chatService.IsRoomMemberAsync(roomId, userId))
+            {
+                if (await _chatService.JoinPublicRoomAsync(roomId, userId))
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{roomId}");
+                    await Clients.Group($"Room_{roomId}").SendAsync("UserJoinedRoom", new { UserId = userId, RoomId = roomId, UserName = Context.User?.Identity?.Name });
+                    return;
+                }
+            }
+
+            // For private rooms or existing members
+            if (await _chatService.IsRoomMemberAsync(roomId, userId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{roomId}");
             }
@@ -113,21 +128,21 @@ namespace RealtimeChat.Hubs
         {
             var inviterId = Context.UserIdentifier;
 
-            if (await _chatService.InviteToRoomAsync(roomId, inviterId!, inviteeId))
+            if (inviterId == null) return;
+
+            if (await _chatService.InviteToRoomAsync(roomId, inviterId, inviteeId))
             {
-                var room = await _chatService.GetRoomAsync(roomId);
-                var inviter = await _userManager.FindByIdAsync(inviterId!);
+                var invitation = await _context.RoomInvitations
+                    .Include(ri => ri.ChatRoom)
+                    .Include(ri => ri.Inviter)
+                    .FirstOrDefaultAsync(ri => ri.ChatRoomId == roomId && ri.InviteeId == inviteeId && ri.Status == InvitationStatus.Pending);
 
-                // Notify the invitee
-                await Clients.User(inviteeId).SendAsync("ReceiveRoomInvitation", new
+                if (invitation != null)
                 {
-                    RoomId = roomId,
-                    RoomName = room.Name,
-                    InviterName = inviter?.DisplayName ?? inviter?.UserName,
-                    InviterId = inviterId
-                });
+                    Console.WriteLine($"Sending invitation to {inviteeId}, Invitation ID: {invitation.Id}");
+                    await Clients.User(inviteeId).SendAsync("ReceiveRoomInvitation", invitation);
+                }
 
-                // Notify the inviter of success
                 await Clients.Caller.SendAsync("InvitationSent", new { Success = true, RoomId = roomId });
             }
             else
@@ -135,25 +150,21 @@ namespace RealtimeChat.Hubs
                 await Clients.Caller.SendAsync("InvitationSent", new { Success = false, RoomId = roomId });
             }
         }
-
         public async Task AcceptRoomInvitation(int invitationId)
         {
             var userId = Context.UserIdentifier;
 
-            if (await _chatService.AcceptInvitationAsync(invitationId, userId!))
+            if (userId == null) return;
+
+            if (await _chatService.AcceptInvitationAsync(invitationId, userId))
             {
-                // Get the room details to join the SignalR group
-                var invitations = await _chatService.GetPendingInvitationsAsync(userId!);
                 var acceptedInvitation = await _context.RoomInvitations
                     .Include(ri => ri.ChatRoom)
                     .FirstOrDefaultAsync(ri => ri.Id == invitationId);
 
                 if (acceptedInvitation != null)
                 {
-                    // Join the room group
                     await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{acceptedInvitation.ChatRoomId}");
-
-                    // Notify room members of new member
                     await Clients.Group($"Room_{acceptedInvitation.ChatRoomId}")
                         .SendAsync("UserJoinedRoom", new
                         {
@@ -175,7 +186,9 @@ namespace RealtimeChat.Hubs
         {
             var userId = Context.UserIdentifier;
 
-            if (await _chatService.DeclineInvitationAsync(invitationId, userId!))
+            if (userId == null) return;
+
+            if (await _chatService.DeclineInvitationAsync(invitationId, userId))
             {
                 await Clients.Caller.SendAsync("InvitationDeclined", new { Success = true, InvitationId = invitationId });
             }
@@ -189,12 +202,11 @@ namespace RealtimeChat.Hubs
         {
             var userId = Context.UserIdentifier;
 
-            if (await _chatService.LeaveRoomAsync(roomId, userId!))
-            {
-                // Remove from SignalR group
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Room_{roomId}");
+            if (userId == null) return;
 
-                // Notify remaining room members
+            if (await _chatService.LeaveRoomAsync(roomId, userId))
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Room_{roomId}");
                 await Clients.Group($"Room_{roomId}")
                     .SendAsync("UserLeftRoom", new
                     {
@@ -215,6 +227,7 @@ namespace RealtimeChat.Hubs
                 });
             }
         }
+
         public override async Task OnConnectedAsync()
         {
             var userId = Context.UserIdentifier;
@@ -227,7 +240,6 @@ namespace RealtimeChat.Hubs
                     user.LastSeen = DateTime.UtcNow;
                     await _userManager.UpdateAsync(user);
 
-                    // Join all rooms the user is a member of
                     var userRooms = await _chatService.GetUserRoomsAsync(userId);
                     foreach (var room in userRooms)
                     {
@@ -241,6 +253,7 @@ namespace RealtimeChat.Hubs
 
             await base.OnConnectedAsync();
         }
+
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var userId = Context.UserIdentifier;

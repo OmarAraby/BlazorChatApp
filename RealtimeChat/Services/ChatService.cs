@@ -310,6 +310,14 @@ namespace RealtimeChat.Services
             return await _context.ChatRoomMembers
                 .AnyAsync(crm => crm.ChatRoomId == roomId && crm.UserId == userId);
         }
+
+        public async Task<RoomInvitation> GetInvitationDetailsAsync(int invitationId)
+        {
+            return await _context.RoomInvitations
+                .Include(ri => ri.ChatRoom)
+                .Include(ri => ri.Inviter)
+                .FirstOrDefaultAsync(ri => ri.Id == invitationId);
+        }
     }
 
 }

@@ -1,23 +1,26 @@
-﻿@inject IChatService ChatService
+﻿@* RoomSearchDialog.razor *@
+@inject IChatService ChatService
 @inject ISnackbar Snackbar
-@inject Microsoft.AspNetCore.SignalR.Client.HubConnection HubConnection
+@inject IDialogService DialogService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
 
 <MudDialog>
     <DialogContent>
         <MudContainer Style="max-width: 400px;">
-            <MudText Typo="Typo.h6" GutterBottom="true">Invite User to Room</MudText>
+            <MudText Typo="Typo.h6" GutterBottom="true">Search Rooms</MudText>
 
             <MudGrid>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="searchTerm"
-                                  Label="Search Users"
+                                  Label="Search Rooms"
                                   Variant="Variant.Outlined"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
-                                  OnKeyUp="@SearchUsers"
+                                  OnKeyUp="@SearchRooms"
                                   Immediate="true"
-                                  Placeholder="Type to search users..." />
+                                  Placeholder="Search by name or description..." />
                 </MudItem>
 
                 <MudItem xs="12">
@@ -30,26 +33,26 @@
                     else if (searchResults.Any())
                     {
                         <MudText Typo="Typo.subtitle2" Class="mb-2">Search Results:</MudText>
-                        <MudList T="ApplicationUser" Clickable="true" Dense="true">
-                            @foreach (var user in searchResults)
+                        <MudList T="ChatRoom" Clickable="true" Dense="true">
+                            @foreach (var room in searchResults)
                             {
-                                <MudListItem OnClick="@(() => SelectUser(user))">
+                                <MudListItem OnClick="@(() => SelectRoom(room))" Disabled="@IsRoomJoinDisabled(room)">
                                     <div class="d-flex align-center justify-space-between">
                                         <div class="d-flex align-center">
-                                            <MudAvatar Size="Size.Small" Class="mr-2">
-                                                @GetInitials(user)
+                                            <MudAvatar Size="Size.Small" Class="mr-2" Color="@(room.IsPrivate ? Color.Secondary : Color.Primary)">
+                                                <MudIcon Icon="@(room.IsPrivate ? Icons.Material.Filled.Lock : Icons.Material.Filled.Forum)" />
                                             </MudAvatar>
                                             <div>
-                                                <MudText>@(user.DisplayName ?? user.UserName)</MudText>
+                                                <MudText>@room.Name</MudText>
                                                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                    @user.Email
+                                                    @(room.Description ?? "No description")
                                                 </MudText>
                                             </div>
                                         </div>
-
-                                        <MudIconButton Icon="@Icons.Material.Filled.PersonAdd"
+                                        <MudIconButton Icon="@Icons.Material.Filled.Login"
                                                        Size="Size.Small"
-                                                       Color="Color.Primary" />
+                                                       Color="Color.Primary"
+                                                       Disabled="@IsRoomJoinDisabled(room)" />
                                     </div>
                                 </MudListItem>
                             }
@@ -58,13 +61,13 @@
                     else if (!string.IsNullOrWhiteSpace(searchTerm) && !isSearching)
                     {
                         <MudAlert Severity="Severity.Info">
-                            No users found matching "@searchTerm"
+                            No rooms found matching "@searchTerm"
                         </MudAlert>
                     }
                     else
                     {
                         <MudText Color="Color.Secondary" Align="Align.Center" Class="pa-4">
-                            Start typing to search for users
+                            Start typing to search for rooms
                         </MudText>
                     }
                 </MudItem>
@@ -79,13 +82,11 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
-    [Parameter] public int RoomId { get; set; }
-
     private string searchTerm = string.Empty;
-    private List<ApplicationUser> searchResults = new();
+    private List<ChatRoom> searchResults = new();
     private bool isSearching = false;
     private Timer? searchTimer;
-    private string? currentUserId;
+    private string? userId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -93,19 +94,13 @@
         var user = authState.User;
         if (user.Identity?.IsAuthenticated == true)
         {
-            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            Console.WriteLine($"Current User ID: {currentUserId}"); // Debug log
-        }
-        else
-        {
-            Snackbar.Add("You must be logged in to invite users.", Severity.Error);
-            MudDialog.Cancel();
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
     }
 
     private void Cancel() => MudDialog.Cancel();
 
-    private async Task SearchUsers()
+    private async Task SearchRooms()
     {
         searchTimer?.Dispose();
         searchTimer = new Timer(async _ => await PerformSearch(), null, 300, Timeout.Infinite);
@@ -125,12 +120,11 @@
 
         try
         {
-            searchResults = await ChatService.SearchUsersAsync(searchTerm);
-            Console.WriteLine($"Search results count: {searchResults.Count}"); // Debug log
+            searchResults = await ChatService.SearchRoomsAsync(searchTerm, userId);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error searching users: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Error searching rooms: {ex.Message}", Severity.Error);
             searchResults.Clear();
         }
         finally
@@ -140,39 +134,42 @@
         }
     }
 
-    private async Task SelectUser(ApplicationUser user)
+    private bool IsRoomJoinDisabled(ChatRoom room)
     {
-        if (currentUserId == null)
+        if (userId == null) return true;
+        bool isMember = room.Members.Any(m => m.UserId == userId);
+        return room.IsPrivate && !isMember; // Disable if private and not a member
+    }
+
+    private async Task SelectRoom(ChatRoom room)
+    {
+        if (userId == null) return;
+
+        bool isMember = room.Members.Any(m => m.UserId == userId);
+        if (room.IsPrivate && !isMember)
         {
-            Snackbar.Add("User not authenticated.", Severity.Error);
+            Snackbar.Add("You are not a member of this private room.", Severity.Warning);
             return;
         }
 
-        Console.WriteLine($"Attempting to invite {user.Id} to room {RoomId} by {currentUserId}"); // Debug log
-        var success = await ChatService.InviteToRoomAsync(RoomId, currentUserId, user.Id);
-        if (success)
+        if (!isMember && !room.IsPrivate)
         {
-            Snackbar.Add($"{user.DisplayName ?? user.UserName} has been invited to the room!", Severity.Success);
-            // Notify via SignalR
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var inviter = authState.User;
-            var inviterName = inviter?.FindFirst(ClaimTypes.Name)?.Value ?? currentUserId;
-            await HubConnection.SendAsync("InviteUserToRoom", RoomId, user.Id);
-            MudDialog.Close(DialogResult.Ok(user));
+            if (await ChatService.JoinPublicRoomAsync(room.Id, userId))
+            {
+                Snackbar.Add("Successfully joined the room!", Severity.Success);
+                NavigationManager.NavigateTo($"/chat/{room.Id}");
+            }
+            else
+            {
+                Snackbar.Add("Failed to join the room.", Severity.Warning);
+            }
         }
         else
         {
-            Snackbar.Add($"{user.DisplayName ?? user.UserName} could not be invited. They may already be a member or an invitation is pending, or you lack admin rights.", Severity.Warning);
-            // Check admin status for debug
-            var isAdmin = await ChatService.IsRoomAdminAsync(RoomId, currentUserId);
-            Console.WriteLine($"User {currentUserId} is admin: {isAdmin}");
+            NavigationManager.NavigateTo($"/chat/{room.Id}");
         }
-    }
 
-    private string GetInitials(ApplicationUser user)
-    {
-        var name = user.DisplayName ?? user.UserName ?? "?";
-        return name.Length > 0 ? name[0].ToString().ToUpper() : "?";
+        MudDialog.Close();
     }
 
     public void Dispose()

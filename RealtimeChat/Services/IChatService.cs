@@ -39,5 +39,8 @@ namespace RealtimeChat.Services
         // Check if user is member of room
         Task<bool> IsRoomMemberAsync(int roomId, string userId);
 
+        Task<RoomInvitation> GetInvitationDetailsAsync(int invitationId);
+
+
     }
 }
