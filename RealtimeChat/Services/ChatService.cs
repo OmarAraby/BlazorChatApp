@@ -377,20 +377,20 @@ namespace RealtimeChat.Services
 
             // Build the base query with all conditions first
             var baseQuery = _context.ChatRooms
-                .Where(r => !r.IsPrivate && // Only search public rooms
+                .Where(r => //!r.IsPrivate &&  Only search public rooms
                            (r.Name.ToLower().Contains(lowerSearchTerm) ||
                             (r.Description != null && r.Description.ToLower().Contains(lowerSearchTerm))));
 
             // If userId is provided, exclude rooms the user is already in
-            if (!string.IsNullOrEmpty(userId))
-            {
-                var userRoomIds = await _context.ChatRoomMembers
-                    .Where(crm => crm.UserId == userId)
-                    .Select(crm => crm.ChatRoomId)
-                    .ToListAsync();
+            //if (!string.IsNullOrEmpty(userId))
+            //{
+            //    var userRoomIds = await _context.ChatRoomMembers
+            //        .Where(crm => crm.UserId == userId)
+            //        .Select(crm => crm.ChatRoomId)
+            //        .ToListAsync();
 
-                baseQuery = baseQuery.Where(r => !userRoomIds.Contains(r.Id));
-            }
+            //    baseQuery = baseQuery.Where(r => !userRoomIds.Contains(r.Id));
+            //}
 
             // Apply includes, ordering and limit at the end
             return await baseQuery

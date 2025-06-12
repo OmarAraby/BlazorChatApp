@@ -259,7 +259,7 @@
             }
         });
 
-        HubConnection.On<dynamic>("LeftRoom", async (data) =>
+        HubConnection.On<dynamic>("UserLeftRoom", async (data) =>
         {
             var userName = data.UserName;
             var roomId = (int)data.RoomId;
@@ -340,6 +340,7 @@
             try
             {
                 await HubConnection.SendAsync("LeaveRoomPermanently", RoomId);
+                await LoadRoomData();
                 NavigationManager.NavigateTo("/chat");
             }
             catch (Exception ex)

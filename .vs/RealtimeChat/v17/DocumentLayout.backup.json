@@ -3,28 +3,55 @@
   "WorkspaceRootPath": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\hubs\\chathub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\hubs\\chathub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\pages\\chat.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\pages\\chat.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\services\\chatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\services\\chatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\pages\\chatroompage.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\pages\\chatroompage.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\chatcomponents\\messageinput.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\chatcomponents\\messageinput.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\chatcomponents\\confirmdialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\chatcomponents\\confirmdialog.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\pages\\chat.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\pages\\chat.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\account\\pages\\register.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\account\\pages\\register.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\account\\pages\\login.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\account\\pages\\login.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\services\\chatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\services\\chatservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\hubs\\chathub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\hubs\\chathub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\chatcomponents\\messageinput.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\chatcomponents\\messageinput.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\chatcomponents\\messagedisplay.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\chatcomponents\\messagedisplay.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\MR\\AppData\\Roaming\\Microsoft\\UserSecrets\\aspnet-RealtimeChat-4a0d3b42-af4f-4125-80fc-fc38b2a77518\\secrets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\chatcomponents\\pendinginvitations.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -43,16 +70,8 @@
       "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\_imports.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\chatcomponents\\messagedisplay.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|solutionrelative:realtimechat\\components\\chatcomponents\\messagedisplay.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9A9F8BEF-7FCB-483B-A428-314EC5BE1757}|RealtimeChat\\RealtimeChat.csproj|d:\\iti-9-month\\blazor\\lab\\realtimechat\\realtimechat\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -78,17 +97,17 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 9,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 7,
               "Title": "ChatHub.cs",
               "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Hubs\\ChatHub.cs",
               "RelativeDocumentMoniker": "RealtimeChat\\Hubs\\ChatHub.cs",
               "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Hubs\\ChatHub.cs",
               "RelativeToolTip": "RealtimeChat\\Hubs\\ChatHub.cs",
-              "ViewState": "AgIAADEBAAAAAAAAAADwv5EAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADMBAAAAAAAAAAAuwGoBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-11T03:48:52.091Z",
               "IsPinned": true,
@@ -96,54 +115,41 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "IChatService.cs",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\IChatService.cs",
-              "RelativeDocumentMoniker": "RealtimeChat\\Services\\IChatService.cs",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\IChatService.cs",
-              "RelativeToolTip": "RealtimeChat\\Services\\IChatService.cs",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAywC4AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-11T23:17:55.715Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "_Imports.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\_Imports.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\_Imports.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\_Imports.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\_Imports.razor",
+              "DocumentIndex": 2,
+              "Title": "ConfirmDialog.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\ConfirmDialog.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\ChatComponents\\ConfirmDialog.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\ConfirmDialog.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\ChatComponents\\ConfirmDialog.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T23:10:26.036Z",
+              "WhenOpened": "2025-06-12T02:40:24.889Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "Home.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Home.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Pages\\Home.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Home.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\Pages\\Home.razor",
-              "ViewState": "AgIAAIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "Register.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Register.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Account\\Pages\\Register.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Register.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Account\\Pages\\Register.razor",
+              "ViewState": "AgIAADMAAAAAAAAAAAAAAE4AAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T22:50:25.894Z",
+              "WhenOpened": "2025-06-12T02:26:08.608Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "App.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\App.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\App.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\App.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\App.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAABYAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "Login.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Login.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Account\\Pages\\Login.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Login.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Account\\Pages\\Login.razor",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAAAEoAAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T22:50:15.648Z",
+              "WhenOpened": "2025-06-12T02:23:58.505Z",
               "EditorCaption": ""
             },
             {
@@ -152,19 +158,147 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "NavMenu.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\NavMenu.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Layout\\NavMenu.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\NavMenu.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\Layout\\NavMenu.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAA5AAAAAAAAAA==",
+              "DocumentIndex": 10,
+              "Title": "MessageDisplay.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
+              "ViewState": "AgIAAJ8AAAAAAAAAAAAlwLMAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T06:36:03.189Z"
+              "WhenOpened": "2025-06-11T02:43:42.926Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 9,
+              "Title": "MessageInput.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
+              "ViewState": "AgIAAF8AAAAAAAAAAAAlwHMAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T02:43:29.403Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Chat.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Chat.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Pages\\Chat.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Chat.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Pages\\Chat.razor",
+              "ViewState": "AgIAAFEBAAAAAAAAAAAnwCABAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T02:39:57.523Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ChatRoomPage.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
+              "ViewState": "AgIAAC8BAAAAAAAAAAAAAFYBAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T02:42:38.61Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ChatService.cs",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\ChatService.cs",
+              "RelativeDocumentMoniker": "RealtimeChat\\Services\\ChatService.cs",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\ChatService.cs",
+              "RelativeToolTip": "RealtimeChat\\Services\\ChatService.cs",
+              "ViewState": "AgIAAG0BAAAAAAAAAAAcwHwBAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-11T04:00:37.666Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\appsettings.json",
+              "RelativeDocumentMoniker": "RealtimeChat\\appsettings.json",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\appsettings.json",
+              "RelativeToolTip": "RealtimeChat\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-06-12T01:07:10.361Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "secrets.json",
+              "DocumentMoniker": "C:\\Users\\MR\\AppData\\Roaming\\Microsoft\\UserSecrets\\aspnet-RealtimeChat-4a0d3b42-af4f-4125-80fc-fc38b2a77518\\secrets.json",
+              "ToolTip": "C:\\Users\\MR\\AppData\\Roaming\\Microsoft\\UserSecrets\\aspnet-RealtimeChat-4a0d3b42-af4f-4125-80fc-fc38b2a77518\\secrets.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-06-12T01:07:36.279Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "PendingInvitations.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
+              "ViewState": "AgIAAEYAAAAAAAAAAAAqwH0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T04:45:32.199Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "MainLayout.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\MainLayout.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Layout\\MainLayout.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\MainLayout.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Layout\\MainLayout.razor",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAB8AAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T04:25:46.746Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Program.cs",
+              "RelativeDocumentMoniker": "RealtimeChat\\Program.cs",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Program.cs",
+              "RelativeToolTip": "RealtimeChat\\Program.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAAADQAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-11T03:59:54.413Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "Index.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
+              "ViewState": "AgIAAE0AAAAAAAAAAAAawGAAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T04:51:36.019Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
               "Title": "app.js",
               "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\wwwroot\\js\\app.js",
               "RelativeDocumentMoniker": "RealtimeChat\\wwwroot\\js\\app.js",
@@ -176,122 +310,68 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "NavMenu.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\NavMenu.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Layout\\NavMenu.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\NavMenu.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Layout\\NavMenu.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T06:36:03.189Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 15,
-              "Title": "Index.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\Account\\Pages\\Manage\\Index.razor",
-              "ViewState": "AgIAAE0AAAAAAAAAAAAawGAAAAAMAAAAAAAAAA==",
+              "Title": "App.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\App.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\App.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\App.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\App.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAABYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T04:51:36.019Z"
+              "WhenOpened": "2025-06-11T22:50:15.648Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "PendingInvitations.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\ChatComponents\\PendingInvitations.razor",
-              "ViewState": "AgIAAEYAAAAAAAAAAAAqwH0AAAABAAAAAAAAAA==",
+              "DocumentIndex": 17,
+              "Title": "Home.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Home.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Pages\\Home.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Home.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\Pages\\Home.razor",
+              "ViewState": "AgIAAIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T04:45:32.199Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "MainLayout.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\MainLayout.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Layout\\MainLayout.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Layout\\MainLayout.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\Layout\\MainLayout.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAApAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T04:25:46.746Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ChatService.cs",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\ChatService.cs",
-              "RelativeDocumentMoniker": "RealtimeChat\\Services\\ChatService.cs",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\ChatService.cs",
-              "RelativeToolTip": "RealtimeChat\\Services\\ChatService.cs",
-              "ViewState": "AgIAAHMBAAAAAAAAAAAAwI0BAAApAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-11T04:00:37.666Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Program.cs",
-              "RelativeDocumentMoniker": "RealtimeChat\\Program.cs",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Program.cs",
-              "RelativeToolTip": "RealtimeChat\\Program.cs",
-              "ViewState": "AgIAAFcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-11T03:59:54.413Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "MessageDisplay.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\ChatComponents\\MessageDisplay.razor",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAAABYAAABwAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T02:43:42.926Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "MessageInput.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\ChatComponents\\MessageInput.razor",
-              "ViewState": "AgIAAHQAAAAAAAAAAAAawIoAAAA/AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T02:43:29.403Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ChatRoomPage.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\Pages\\ChatRoomPage.razor",
-              "ViewState": "AgIAAOAAAAAAAAAAAAAewFoBAABSAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T02:42:38.61Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Chat.razor",
-              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Chat.razor",
-              "RelativeDocumentMoniker": "RealtimeChat\\Components\\Pages\\Chat.razor",
-              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Pages\\Chat.razor",
-              "RelativeToolTip": "RealtimeChat\\Components\\Pages\\Chat.razor",
-              "ViewState": "AgIAAM8AAAAAAAAAAAAuwNoAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-11T02:39:57.523Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-11T22:50:25.894Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 16,
+              "Title": "_Imports.razor",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\_Imports.razor",
+              "RelativeDocumentMoniker": "RealtimeChat\\Components\\_Imports.razor",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\_Imports.razor",
+              "RelativeToolTip": "RealtimeChat\\Components\\_Imports.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-11T23:10:26.036Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "IChatService.cs",
+              "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\IChatService.cs",
+              "RelativeDocumentMoniker": "RealtimeChat\\Services\\IChatService.cs",
+              "ToolTip": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Services\\IChatService.cs",
+              "RelativeToolTip": "RealtimeChat\\Services\\IChatService.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAywC4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-11T23:17:55.715Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
               "Title": "InvalidPasswordReset.razor",
               "DocumentMoniker": "D:\\iti-9-month\\Blazor\\Lab\\RealtimeChat\\RealtimeChat\\Components\\Account\\Pages\\InvalidPasswordReset.razor",
               "RelativeDocumentMoniker": "RealtimeChat\\Components\\Account\\Pages\\InvalidPasswordReset.razor",
