@@ -1,5 +1,5 @@
+wwwroot\js\app.js
 wwwroot\app.css
-wwwroot\app.js
 wwwroot\bootstrap\bootstrap.min.css
 wwwroot\bootstrap\bootstrap.min.css.map
 wwwroot\favicon.png

@@ -136,7 +136,7 @@
                 await HubConnection.SendAsync("SendMessageToRoom", RoomId, message);
             }
             message = string.Empty;
-            Snackbar.Add("Message sent!", Severity.Success);
+            // Snackbar.Add("Message sent!", Severity.Success);
         }
         catch (Exception ex)
         {

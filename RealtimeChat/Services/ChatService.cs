@@ -1,16 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RealtimeChat.Data;
 using RealtimeChat.Models;
+using Microsoft.AspNetCore.SignalR;
+using RealtimeChat.Hubs;
 
 namespace RealtimeChat.Services
 {
     public class ChatService : IChatService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatService(ApplicationDbContext context)
+        public ChatService(ApplicationDbContext context, IHubContext<ChatHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         public async Task<List<ChatRoom>> GetPublicRoomsAsync()
@@ -36,7 +40,6 @@ namespace RealtimeChat.Services
                 .ToListAsync();
         }
 
-
         public async Task<ChatRoom> GetRoomAsync(int roomId)
         {
             return await _context.ChatRooms
@@ -44,6 +47,7 @@ namespace RealtimeChat.Services
                 .ThenInclude(m => m.User) // Eager load User details for each member
                 .FirstOrDefaultAsync(r => r.Id == roomId) ?? throw new Exception("Room not found");
         }
+
         public async Task<List<Message>> GetRoomMessagesAsync(int roomId, int page = 1, int pageSize = 50)
         {
             return await _context.Messages
@@ -95,6 +99,14 @@ namespace RealtimeChat.Services
             _context.ChatRoomMembers.Add(membership);
             await _context.SaveChangesAsync();
 
+            // ADDED: Notify about new member (creator) joining
+            var user = await _context.Users.FindAsync(createdById);
+            if (user != null)
+            {
+                await _hubContext.Clients.Group($"Room_{room.Id}")
+                    .SendAsync("MemberJoinedRoom", user.UserName, user.DisplayName, room.Id);
+            }
+
             return room;
         }
 
@@ -121,6 +133,15 @@ namespace RealtimeChat.Services
 
             _context.ChatRoomMembers.Add(membership);
             await _context.SaveChangesAsync();
+
+            // ADDED: Notify all room members about new member joining
+            var user = await _context.Users.FindAsync(userId);
+            if (user != null)
+            {
+                await _hubContext.Clients.Group($"Room_{roomId}")
+                    .SendAsync("MemberJoinedRoom", user.UserName, user.DisplayName, roomId);
+            }
+
             return true;
         }
 
@@ -153,8 +174,18 @@ namespace RealtimeChat.Services
 
             _context.RoomInvitations.Add(invitation);
             await _context.SaveChangesAsync();
+
+            // ADDED: Send SignalR notification to the invitee
+            var fullInvitation = await GetInvitationDetailsAsync(invitation.Id);
+            if (fullInvitation != null)
+            {
+                await _hubContext.Clients.User(inviteeId)
+                    .SendAsync("ReceiveRoomInvitation", fullInvitation);
+            }
+
             return true;
         }
+
         public async Task<List<RoomInvitation>> GetPendingInvitationsAsync(string userId)
         {
             return await _context.RoomInvitations
@@ -164,6 +195,7 @@ namespace RealtimeChat.Services
                 .OrderByDescending(ri => ri.CreatedAt)
                 .ToListAsync();
         }
+
         public async Task<bool> AcceptInvitationAsync(int invitationId, string userId)
         {
             var invitation = await _context.RoomInvitations
@@ -189,8 +221,18 @@ namespace RealtimeChat.Services
             invitation.RespondedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            // ADDED: Notify all room members about new member joining
+            var user = await _context.Users.FindAsync(userId);
+            if (user != null)
+            {
+                await _hubContext.Clients.Group($"Room_{invitation.ChatRoomId}")
+                    .SendAsync("MemberJoinedRoom", user.UserName, user.DisplayName, invitation.ChatRoomId);
+            }
+
             return true;
         }
+
         public async Task<bool> DeclineInvitationAsync(int invitationId, string userId)
         {
             var invitation = await _context.RoomInvitations
@@ -201,30 +243,51 @@ namespace RealtimeChat.Services
             if (invitation == null)
                 return false;
 
+            // Update invitation status
             invitation.Status = InvitationStatus.Declined;
             invitation.RespondedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
             return true;
         }
-        public async Task<List<ChatRoom>> SearchRoomsAsync(string searchTerm, string? userId = null)
-        {
-            var query = _context.ChatRooms
-                .Where(r => r.Name.Contains(searchTerm) ||
-                           (r.Description != null && r.Description.Contains(searchTerm)));
 
-            // If userId is provided, include user's membership info
-            if (!string.IsNullOrEmpty(userId))
+        public async Task<Message> SendMessageAsync(string senderId, int? chatRoomId, string? recipientId, string content)
+        {
+            var message = new Message
             {
-                query = query.Include(r => r.Members.Where(m => m.UserId == userId));
+                SenderId = senderId,
+                ChatRoomId = chatRoomId,
+                RecipientId = recipientId,
+                Content = content,
+                SentAt = DateTime.UtcNow,
+                IsPrivate = recipientId != null
+            };
+
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            // Load sender details for SignalR
+            message = await _context.Messages
+                .Include(m => m.Sender)
+                .Include(m => m.Recipient)
+                .FirstAsync(m => m.Id == message.Id);
+
+            // Send SignalR notification
+            if (message.IsPrivate)
+            {
+                // Send to both sender and recipient for private messages
+                await _hubContext.Clients.Users(new[] { senderId, recipientId! })
+                    .SendAsync("ReceivePrivateMessage", message);
+            }
+            else if (chatRoomId.HasValue)
+            {
+                // Send to all users in the room
+                await _hubContext.Clients.Group($"Room_{chatRoomId}")
+                    .SendAsync("ReceiveMessage", message);
             }
 
-            return await query
-                .Include(r => r.Members)
-                .ThenInclude(m => m.User)
-                .OrderBy(r => r.Name)
-                .Take(20) // Limit results
-                .ToListAsync();
+            return message;
         }
 
         public async Task<bool> LeaveRoomAsync(int roomId, string userId)
@@ -235,74 +298,18 @@ namespace RealtimeChat.Services
             if (membership == null)
                 return false;
 
-            var room = await _context.ChatRooms
-                .Include(r => r.Members)
-                .FirstOrDefaultAsync(r => r.Id == roomId);
-
-            if (room == null)
-                return false;
-
-            var adminCount = room.Members.Count(m => m.IsAdmin);
-            var totalMembers = room.Members.Count;
-
-            // If user is admin
-            if (membership.IsAdmin)
-            {
-                // If user is the only admin and not the only member
-                if (adminCount == 1 && totalMembers > 1)
-                {
-                    // Can't leave while being the only admin
-                    return false;
-                }
-
-                // If user is the only member (and admin), delete the room
-                if (totalMembers == 1)
-                {
-                    _context.ChatRooms.Remove(room);
-                    await _context.SaveChangesAsync();
-                    return true;
-                }
-            }
-
-            // In all other cases, remove membership
             _context.ChatRoomMembers.Remove(membership);
             await _context.SaveChangesAsync();
+
+            // Notify all room members about user leaving
+            var user = await _context.Users.FindAsync(userId);
+            if (user != null)
+            {
+                await _hubContext.Clients.Group($"Room_{roomId}")
+                    .SendAsync("MemberLeftRoom", user.UserName, user.DisplayName, roomId);
+            }
+
             return true;
-        }
-
-        public async Task<List<ApplicationUser>> GetOnlineUsersAsync()
-        {
-            return await _context.Users
-                .Where(u => u.IsOnline)
-                .OrderBy(u => u.DisplayName ?? u.UserName)
-                .ToListAsync();
-        }
-        public async Task<List<ApplicationUser>> GetRoomMembersAsync(int roomId)
-        {
-            return await _context.ChatRoomMembers
-                .Where(crm => crm.ChatRoomId == roomId)
-                .Include(crm => crm.User)
-                .Select(crm => crm.User)
-                .OrderBy(u => u.DisplayName ?? u.UserName)
-                .ToListAsync();
-        }
-
-
-        public async Task<List<ApplicationUser>> SearchUsersAsync(string searchTerm)
-        {
-            return await _context.Users
-                .Where(u => (u.DisplayName != null && u.DisplayName.Contains(searchTerm)) ||
-                           (u.UserName != null && u.UserName.Contains(searchTerm))||(u.Email!=null && u.Email.Contains(searchTerm)))
-                .Take(10)
-                .ToListAsync();
-        }
-
-        public async Task<bool> IsRoomAdminAsync(int roomId, string userId)
-        {
-            return await _context.ChatRoomMembers
-                .AnyAsync(crm => crm.ChatRoomId == roomId &&
-                                crm.UserId == userId &&
-                                crm.IsAdmin);
         }
 
         public async Task<bool> IsRoomMemberAsync(int roomId, string userId)
@@ -311,13 +318,89 @@ namespace RealtimeChat.Services
                 .AnyAsync(crm => crm.ChatRoomId == roomId && crm.UserId == userId);
         }
 
+        public async Task<bool> IsRoomAdminAsync(int roomId, string userId)
+        {
+            return await _context.ChatRoomMembers
+                .AnyAsync(crm => crm.ChatRoomId == roomId && crm.UserId == userId && crm.IsAdmin);
+        }
+
         public async Task<RoomInvitation> GetInvitationDetailsAsync(int invitationId)
         {
             return await _context.RoomInvitations
                 .Include(ri => ri.ChatRoom)
                 .Include(ri => ri.Inviter)
-                .FirstOrDefaultAsync(ri => ri.Id == invitationId);
+                .Include(ri => ri.Invitee)
+                .FirstOrDefaultAsync(ri => ri.Id == invitationId) ?? throw new Exception("Invitation not found");
         }
-    }
 
+        public async Task<List<ApplicationUser>> GetRoomMembersAsync(int roomId)
+        {
+            return await _context.ChatRoomMembers
+                .Where(crm => crm.ChatRoomId == roomId)
+                .Include(crm => crm.User)
+                .Select(crm => crm.User)
+                .OrderBy(u => u.DisplayName)
+                .ToListAsync();
+        }
+
+        public async Task<List<ApplicationUser>> GetOnlineUsersAsync()
+        {
+            // This would typically track online status via SignalR connections
+            // For now, return all users - you'd need to implement connection tracking
+            return await _context.Users
+                .Where(u => u.IsOnline) // Assuming you have an IsOnline property
+                .OrderBy(u => u.DisplayName)
+                .ToListAsync();
+        }
+
+        public async Task<List<ApplicationUser>> SearchUsersAsync(string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return new List<ApplicationUser>();
+
+            var lowerSearchTerm = searchTerm.ToLower();
+            return await _context.Users
+                .Where(u => u.UserName.ToLower().Contains(lowerSearchTerm) ||
+                           u.DisplayName.ToLower().Contains(lowerSearchTerm) ||
+                           (u.Email != null && u.Email.ToLower().Contains(lowerSearchTerm)))
+                .OrderBy(u => u.DisplayName)
+                .Take(20) // Limit results
+                .ToListAsync();
+        }
+
+        public async Task<List<ChatRoom>> SearchRoomsAsync(string searchTerm, string? userId = null)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return new List<ChatRoom>();
+
+            var lowerSearchTerm = searchTerm.ToLower();
+
+            // Build the base query with all conditions first
+            var baseQuery = _context.ChatRooms
+                .Where(r => !r.IsPrivate && // Only search public rooms
+                           (r.Name.ToLower().Contains(lowerSearchTerm) ||
+                            (r.Description != null && r.Description.ToLower().Contains(lowerSearchTerm))));
+
+            // If userId is provided, exclude rooms the user is already in
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var userRoomIds = await _context.ChatRoomMembers
+                    .Where(crm => crm.UserId == userId)
+                    .Select(crm => crm.ChatRoomId)
+                    .ToListAsync();
+
+                baseQuery = baseQuery.Where(r => !userRoomIds.Contains(r.Id));
+            }
+
+            // Apply includes, ordering and limit at the end
+            return await baseQuery
+                .Include(r => r.Members)
+                .ThenInclude(m => m.User)
+                .OrderBy(r => r.Name)
+                .Take(20) // Limit results
+                .ToListAsync();
+        }
+
+
+    }
 }

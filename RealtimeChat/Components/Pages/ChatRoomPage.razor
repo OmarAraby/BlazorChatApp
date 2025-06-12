@@ -93,7 +93,7 @@
                         <MudListItem>
                             <div class="d-flex align-center justify-space-between">
                                 <div class="d-flex align-center">
-                                    <MudBadge BadgeClass="ml-4" Color="@(member.IsOnline ? Color.Success : Color.Default)"
+                                    <MudBadge BadgeClass="ml-4" Color="@(member.IsOnline? Color.Success: Color.Default)"
                                               Dot="true" Overlap="true" Class="mr-2">
                                         <MudText>@(member.DisplayName ?? member.UserName)</MudText>
                                     </MudBadge>
@@ -203,7 +203,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading room data: {ex.Message}", Severity.Error);
+            // Snackbar.Add($"Error loading room data: {ex.Message}", Severity.Error);
         }
     }
 
@@ -247,19 +247,52 @@
             await ScrollToBottom();
         });
 
-        HubConnection.On("UserJoinedRoom", async (dynamic data) =>
+        HubConnection.On<dynamic>("UserJoinedRoom", async (data) =>
         {
-            await LoadRoomData();
-            await InvokeAsync(StateHasChanged);
+            var userName = data.DisplayName ?? data.UserName;
+            var roomId = (int)data.RoomId;
+            if (roomId == RoomId)
+            {
+                await LoadRoomData();
+                Snackbar.Add($"{userName} joined the room!", Severity.Info);
+                await InvokeAsync(StateHasChanged);
+            }
         });
 
-        HubConnection.On("UserLeftRoom", async (dynamic data) =>
+        HubConnection.On<dynamic>("LeftRoom", async (data) =>
         {
-            await LoadRoomData();
-            await InvokeAsync(StateHasChanged);
+            var userName = data.UserName;
+            var roomId = (int)data.RoomId;
+            if (roomId == RoomId)
+            {
+                await LoadRoomData();
+                Snackbar.Add($"{userName} left the room.", Severity.Success);
+                await InvokeAsync(StateHasChanged);
+            }
         });
-    }
+        HubConnection.On<string, string, int>("MemberLeftRoom", async (userName, displayName, roomId) =>
+            {
+                if (roomId == RoomId)
+                {
+                    await LoadRoomData(); // Refresh member list
+                    Snackbar.Add($"{displayName ?? userName} left the room.", Severity.Normal);
+                    await InvokeAsync(StateHasChanged);
+                }
+    
+           });
 
+        HubConnection.On<string, string, int>("MemberJoinedRoom", async (userName, displayName, roomId) => 
+         {
+             if (roomId == RoomId)
+             {
+                 await LoadRoomData(); // Refresh member list
+                 Snackbar.Add($"{displayName ?? userName} Join the room.", Severity.Info);
+                 await InvokeAsync(StateHasChanged);
+             }
+
+         });
+
+        }
     private async Task ScrollToBottom()
     {
         try

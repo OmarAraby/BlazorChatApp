@@ -9,30 +9,45 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <MudList T="RoomInvitation" Dense="true">
-    @foreach (var invitation in Invitations)
+    @if (Invitations.Any())
     {
-        <MudListItem>
-            <MudGrid>
-                <MudItem xs="8">
-                    <MudText Typo="Typo.body1">
-                        Invitation to <strong>@invitation.ChatRoom.Name</strong> from @invitation.Inviter.DisplayName
-                    </MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">
-                        Invited on @invitation.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
-                    </MudText>
-                </MudItem>
-                <MudItem xs="4" Class="d-flex justify-end">
-                    <MudButtonGroup Variant="Variant.Outlined">
-                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@(() => AcceptInvitation(invitation.Id))">
-                            Accept
-                        </MudButton>
-                        <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DeclineInvitation(invitation.Id))">
-                            Decline
-                        </MudButton>
-                    </MudButtonGroup>
-                </MudItem>
-            </MudGrid>
-        </MudListItem>
+        @foreach (var invitation in Invitations)
+        {
+            <MudListItem>
+                <MudGrid>
+                    <MudItem xs="8">
+                        <MudText Typo="Typo.body1">
+                            Invitation to <strong>@invitation.ChatRoom.Name</strong> from @(invitation.Inviter.DisplayName ?? invitation.Inviter.Email)
+                        </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Invited on @invitation.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                        </MudText>
+                    </MudItem>
+                    <MudItem xs="4" Class="d-flex justify-end">
+                        <MudButtonGroup Variant="Variant.Outlined">
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Success"
+                                       OnClick="@(() => AcceptInvitation(invitation.Id))"
+                                       Disabled="@(invitation.Status != InvitationStatus.Pending)">
+                                Accept
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => DeclineInvitation(invitation.Id))"
+                                       Disabled="@(invitation.Status != InvitationStatus.Pending)">
+                                Decline
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudItem>
+                </MudGrid>
+            </MudListItem>
+        }
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-2">
+            No pending invitations.
+        </MudText>
     }
 </MudList>
 
@@ -41,7 +56,6 @@
     [Parameter] public EventCallback OnInvitationAccepted { get; set; }
     [Parameter] public EventCallback OnInvitationDeclined { get; set; }
     private string? currentUserId;
-    private HubConnection _hubConnection;
 
     protected override async Task OnInitializedAsync()
     {
@@ -49,54 +63,64 @@
         var user = authState.User;
         if (user.Identity?.IsAuthenticated == true)
         {
-            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _hubConnection = HubConnection; // Assign the injected HubConnection
-            await SetupSignalR();
+            currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         }
-    }
-
-    private async Task SetupSignalR()
-    {
-        if (_hubConnection.State == HubConnectionState.Disconnected)
+        else
         {
-            await _hubConnection.StartAsync();
+            NavigationManager.NavigateTo("Account/Login");
         }
-
-        _hubConnection.On<RoomInvitation>("ReceiveRoomInvitation", async (invitation) =>
-        {
-            if (invitation.InviteeId == currentUserId)
-            {
-                Invitations.Add(invitation);
-                await InvokeAsync(StateHasChanged); // Update UI in real-time
-                Snackbar.Add($"New invitation to {invitation.ChatRoom.Name}!", Severity.Info);
-            }
-        });
     }
 
     private async Task AcceptInvitation(int invitationId)
     {
-        if (currentUserId != null && await ChatService.AcceptInvitationAsync(invitationId, currentUserId))
+        if (string.IsNullOrEmpty(currentUserId))
         {
-            Snackbar.Add("Invitation accepted!", Severity.Success);
-            await HubConnection.SendAsync("AcceptRoomInvitation", invitationId);
-            await OnInvitationAccepted.InvokeAsync();
+            Snackbar.Add("User not authenticated.", Severity.Error);
+            return;
         }
-        else
+
+        try
         {
-            Snackbar.Add("Failed to accept invitation.", Severity.Error);
+            if (await ChatService.AcceptInvitationAsync(invitationId, currentUserId))
+            {
+                await HubConnection.SendAsync("AcceptRoomInvitation", invitationId);
+                Snackbar.Add("Invitation accepted! You've joined the room.", Severity.Success);
+                await OnInvitationAccepted.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to accept invitation.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error accepting invitation: {ex.Message}", Severity.Error);
         }
     }
 
     private async Task DeclineInvitation(int invitationId)
     {
-        if (currentUserId != null && await ChatService.DeclineInvitationAsync(invitationId, currentUserId))
+        if (string.IsNullOrEmpty(currentUserId))
         {
-            Snackbar.Add("Invitation declined.", Severity.Success);
-            await OnInvitationDeclined.InvokeAsync();
+            Snackbar.Add("User not authenticated.", Severity.Error);
+            return;
         }
-        else
+
+        try
         {
-            Snackbar.Add("Failed to decline invitation.", Severity.Error);
+            if (await ChatService.DeclineInvitationAsync(invitationId, currentUserId))
+            {
+                Snackbar.Add("Invitation declined.", Severity.Info);
+                await OnInvitationDeclined.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to decline invitation.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error declining invitation: {ex.Message}", Severity.Error);
         }
     }
 }

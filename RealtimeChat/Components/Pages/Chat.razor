@@ -1,5 +1,6 @@
 ﻿@page "/chat"
 @using RealtimeChat.Dtos
+@using System.Security.Claims
 @inject IChatService ChatService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -68,9 +69,37 @@
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" GutterBottom="true">
                         <MudIcon Icon="@Icons.Material.Filled.Notifications" Class="mr-2" />
-                        Notifications (@pendingInvitations.Count)
+                        Pending Invitations (@pendingInvitations.Count)
                     </MudText>
-                    <PendingInvitations Invitations="pendingInvitations" OnInvitationAccepted="LoadRooms" OnInvitationDeclined="LoadRooms" />
+                    @foreach (var invitation in pendingInvitations)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mb-2 ">
+                            <MudGrid>
+                                <MudItem xs="8">
+                                    Invitation to <strong>@invitation.ChatRoom.Name</strong> from @(invitation.Inviter.DisplayName ?? invitation.Inviter.Email)
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        Invited on @invitation.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                                    </MudText>
+                                </MudItem>
+                                <MudItem xs="4" Class="d-flex justify-end align-center">
+                                    <MudButtonGroup Variant="Variant.Outlined">
+                                        <MudButton Size="Size.Small"
+                                                   Color="Color.Success"
+                                                   OnClick="async () => await AcceptInvitation(invitation.Id)"
+                                                   Disabled="@(invitation.Status != InvitationStatus.Pending)">
+                                            Accept
+                                        </MudButton>
+                                        <MudButton Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   OnClick="async () => await DeclineInvitation(invitation.Id)"
+                                                   Disabled="@(invitation.Status != InvitationStatus.Pending)">
+                                            Decline
+                                        </MudButton>
+                                    </MudButtonGroup>
+                                </MudItem>
+                            </MudGrid>
+                        </MudAlert>
+                    }
                 </MudPaper>
             </MudItem>
         }
@@ -135,7 +164,6 @@
             <MudItem xs="12">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" GutterBottom="true">Your Rooms</MudText>
-
                     <MudGrid>
                         @foreach (var room in userRooms)
                         {
@@ -153,6 +181,10 @@
                                                 <MudText Typo="Typo.body2" Color="Color.Secondary">
                                                     @(room.Description ?? "No description")
                                                 </MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                    @room.Members.Count members
+                                                </MudText>
+                                                <MudSpacer />
                                                 <MudChip T="ChatRoom" Size="Size.Small" Color="@(room.IsPrivate? Color.Warning: Color.Success)">
                                                     @(room.IsPrivate ? "Private" : "Public")
                                                 </MudChip>
@@ -190,7 +222,7 @@
     private List<RoomInvitation> pendingInvitations = new();
     private List<MessageNotification> messageNotifications = new();
     private string? userId;
-    private Dictionary<int, bool> isRoomMember = new(); // New dictionary to track membership
+    private Dictionary<int, bool> isRoomMember = new();
 
     private class MessageNotification
     {
@@ -225,7 +257,6 @@
             userRooms = await ChatService.GetUserRoomsAsync(userId);
             pendingInvitations = await ChatService.GetPendingInvitationsAsync(userId);
 
-            // Update isRoomMember for all public rooms
             foreach (var room in publicRooms)
             {
                 isRoomMember[room.Id] = await ChatService.IsRoomMemberAsync(room.Id, userId);
@@ -240,48 +271,59 @@
         {
             try
             {
+                Console.WriteLine("Attempting to start SignalR connection...");
                 await HubConnection.StartAsync();
                 Console.WriteLine("SignalR connection started for user: " + userId);
+
+                HubConnection.Closed += async (error) =>
+                {
+                    Console.WriteLine("SignalR connection closed. Reconnecting...");
+                    Snackbar.Add("Connection lost. Reconnecting...", Severity.Warning);
+                    await Task.Delay(new Random().Next(0, 5) * 1000);
+                    await HubConnection.StartAsync();
+                    Snackbar.Add("Reconnected to chat!", Severity.Success);
+                };
             }
             catch (Exception ex)
             {
-                Console.WriteLine("SignalR connection failed: " + ex.Message);
+                Console.WriteLine($"SignalR connection failed: {ex.Message}");
                 Snackbar.Add("Failed to connect to chat service.", Severity.Error);
                 return;
             }
         }
 
+        // FIXED: Remove duplicate handlers and properly setup single handlers
+        HubConnection.Remove("ReceiveRoomInvitation");
+        HubConnection.Remove("ReceiveRoomMessage");
+        HubConnection.Remove("MemberJoinedRoom");
+
+        // Handle room invitations
         HubConnection.On<RoomInvitation>("ReceiveRoomInvitation", async (invitation) =>
         {
             await InvokeAsync(async () =>
             {
-                Console.WriteLine($"Received invitation for user {userId}, Invitation ID: {invitation.Id}");
+                Console.WriteLine($"Received invitation for user {userId}, Invitation ID: {invitation.Id}, Room: {invitation.ChatRoom?.Name}");
                 if (invitation.InviteeId == userId && invitation.Status == InvitationStatus.Pending)
                 {
                     var fullInvitation = await ChatService.GetInvitationDetailsAsync(invitation.Id);
-                    if (fullInvitation != null)
+                    if (fullInvitation != null && !pendingInvitations.Any(i => i.Id == fullInvitation.Id))
                     {
-                        if (!pendingInvitations.Any(i => i.Id == fullInvitation.Id)) // Avoid duplicates
-                        {
-                            pendingInvitations.Add(fullInvitation);
-                            StateHasChanged();
-                            Snackbar.Add($"New invitation to {fullInvitation.ChatRoom.Name} from {fullInvitation.Inviter.DisplayName ?? fullInvitation.Inviter.Email}!", Severity.Info);
-                        }
-
-                        // Auto-remove notification after 5 seconds
-                        await Task.Delay(5000);
-                        await InvokeAsync(() => pendingInvitations.Remove(fullInvitation));
+                        pendingInvitations.Add(fullInvitation);
                         StateHasChanged();
+                        Snackbar.Add(
+                            $"New invitation to {fullInvitation.ChatRoom.Name} from {fullInvitation.Inviter.DisplayName ?? fullInvitation.Inviter.Email}!",
+                            Severity.Info
+                        );
                     }
                 }
             });
         });
-
+        // Handle room messages
         HubConnection.On<MessageDto>("ReceiveRoomMessage", async (message) =>
         {
             await InvokeAsync(async () =>
             {
-                if (userId != null && await ChatService.IsRoomMemberAsync(message.RoomId, userId))
+                if (userId != null && message.SenderId != userId && await ChatService.IsRoomMemberAsync(message.RoomId, userId))
                 {
                     var room = await ChatService.GetRoomAsync(message.RoomId);
                     if (room != null)
@@ -293,36 +335,146 @@
                             SenderName = message.SenderName,
                             SentAt = message.SentAt
                         };
-                        messageNotifications.Add(notification);
-                        StateHasChanged();
-                        Snackbar.Add($"New message in {room.Name} from {message.SenderName}!", Severity.Info);
 
-                        // Auto-remove notification after 5 seconds
-                        await Task.Delay(5000);
-                        await InvokeAsync(() => messageNotifications.Remove(notification));
-                        StateHasChanged();
+                        // Avoid duplicate notifications
+                        if (!messageNotifications.Any(n => n.RoomId == notification.RoomId &&
+                                                          n.SenderName == notification.SenderName &&
+                                                          Math.Abs((n.SentAt - notification.SentAt).TotalSeconds) < 1))
+                        {
+                            messageNotifications.Add(notification);
+                            StateHasChanged();
+                        }
+                    }
+                }
+            });
+        });
+
+        // NEW: Handle member joined room notifications
+        HubConnection.On<string, string, int>("MemberJoinedRoom", async (userName, displayName, roomId) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                if (userId != null && await ChatService.IsRoomMemberAsync(roomId, userId))
+                {
+                    var room = await ChatService.GetRoomAsync(roomId);
+                    if (room != null)
+                    {
+                        Snackbar.Add($"{displayName ?? userName} joined {room.Name}", Severity.Info);
+                        // Refresh room data to update member count
+                        await LoadRooms();
                     }
                 }
             });
         });
     }
 
-    private void SelectRoom(int roomId)
+    private async Task AcceptInvitation(int invitationId)
     {
-        NavigationManager.NavigateTo($"/chat/{roomId}");
+        if (userId == null) return;
+
+        try
+        {
+            if (await ChatService.AcceptInvitationAsync(invitationId, userId))
+            {
+                var invitation = pendingInvitations.FirstOrDefault(i => i.Id == invitationId);
+                if (invitation != null)
+                {
+                    pendingInvitations.Remove(invitation);
+                }
+
+                await HubConnection.SendAsync("AcceptRoomInvitation", invitationId);
+                Snackbar.Add("Invitation accepted! You've been added to the room.", Severity.Success);
+                await LoadRooms();
+            }
+            else
+            {
+                Snackbar.Add("Failed to accept invitation.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error accepting invitation: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeclineInvitation(int invitationId)
+    {
+        if (userId == null) return;
+
+        try
+        {
+            if (await ChatService.DeclineInvitationAsync(invitationId, userId))
+            {
+                var invitation = pendingInvitations.FirstOrDefault(i => i.Id == invitationId);
+                if (invitation != null)
+                {
+                    pendingInvitations.Remove(invitation);
+                }
+
+                Snackbar.Add("Invitation declined.", Severity.Info);
+                await LoadRooms();
+            }
+            else
+            {
+                Snackbar.Add("Failed to decline invitation.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error declining invitation: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SelectRoom(int roomId)
+    {
+        try
+        {
+            if (HubConnection.State == HubConnectionState.Disconnected)
+            {
+                await HubConnection.StartAsync();
+            }
+
+            if (HubConnection.State == HubConnectionState.Connected)
+            {
+                NavigationManager.NavigateTo($"/chat/{roomId}");
+            }
+            else
+            {
+                Snackbar.Add("Failed to connect to chat server. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error connecting to chat: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task JoinPublicRoom(int roomId)
     {
-        if (userId != null && await ChatService.JoinPublicRoomAsync(roomId, userId))
+        if (userId == null) return;
+
+        try
         {
-            Snackbar.Add("Successfully joined the room!", Severity.Success);
-            await LoadRooms(); // Refresh room lists
-            NavigationManager.NavigateTo($"/chat/{roomId}");
+            if (HubConnection.State != HubConnectionState.Connected)
+            {
+                await HubConnection.StartAsync();
+            }
+
+            if (await ChatService.JoinPublicRoomAsync(roomId, userId))
+            {
+                await HubConnection.SendAsync("JoinRoom", roomId);
+                Snackbar.Add("Successfully joined the room!", Severity.Success);
+                await LoadRooms();
+                NavigationManager.NavigateTo($"/chat/{roomId}");
+            }
+            else
+            {
+                Snackbar.Add("Failed to join the room. It may be private or you're already a member.", Severity.Warning);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Snackbar.Add("Failed to join the room. It may be private or you’re already a member.", Severity.Warning);
+            Snackbar.Add($"Error joining room: {ex.Message}", Severity.Error);
         }
     }
 
@@ -341,7 +493,7 @@
 
         if (!result.Canceled)
         {
-            await LoadRooms(); // Refresh the room list
+            await LoadRooms();
         }
     }
 
@@ -354,7 +506,7 @@
 
         if (!result.Canceled && result.Data is ChatRoom selectedRoom)
         {
-            await JoinPublicRoom(selectedRoom.Id); // Join the selected public room
+            await JoinPublicRoom(selectedRoom.Id);
         }
     }
 

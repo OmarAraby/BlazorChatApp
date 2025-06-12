@@ -6,8 +6,6 @@ using RealtimeChat.Data;
 using RealtimeChat.Dtos;
 using RealtimeChat.Models;
 using RealtimeChat.Services;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace RealtimeChat.Hubs
 {
@@ -30,10 +28,11 @@ namespace RealtimeChat.Hubs
             var userId = Context.UserIdentifier;
             var user = await _userManager.FindByIdAsync(userId!);
 
-            if (user == null) return;
-
-            if (!await _chatService.IsRoomMemberAsync(roomId, userId!))
+            if (user == null || !await _chatService.IsRoomMemberAsync(roomId, userId!))
+            {
+                await Clients.Caller.SendAsync("Error", "User not authorized or not a room member.");
                 return;
+            }
 
             var chatMessage = new Message
             {
@@ -66,7 +65,11 @@ namespace RealtimeChat.Hubs
             var sender = await _userManager.FindByIdAsync(senderId!);
             var recipient = await _userManager.FindByIdAsync(recipientId);
 
-            if (sender == null || recipient == null) return;
+            if (sender == null || recipient == null)
+            {
+                await Clients.Caller.SendAsync("Error", "Invalid sender or recipient.");
+                return;
+            }
 
             var chatMessage = new Message
             {
@@ -97,22 +100,39 @@ namespace RealtimeChat.Hubs
         public async Task JoinRoom(int roomId)
         {
             var userId = Context.UserIdentifier;
-
             if (userId == null) return;
 
-            // Allow joining public rooms directly
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                await Clients.Caller.SendAsync("Error", "User not found.");
+                return;
+            }
+
             var room = await _chatService.GetRoomAsync(roomId);
-            if (room != null && !room.IsPrivate && !await _chatService.IsRoomMemberAsync(roomId, userId))
+            if (room == null)
+            {
+                await Clients.Caller.SendAsync("Error", "Room not found.");
+                return;
+            }
+
+            if (!room.IsPrivate && !await _chatService.IsRoomMemberAsync(roomId, userId))
             {
                 if (await _chatService.JoinPublicRoomAsync(roomId, userId))
                 {
                     await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{roomId}");
-                    await Clients.Group($"Room_{roomId}").SendAsync("UserJoinedRoom", new { UserId = userId, RoomId = roomId, UserName = Context.User?.Identity?.Name });
+                    await Clients.Group($"Room_{roomId}").SendAsync("UserJoinedRoom", new
+                    {
+                        UserId = userId,
+                        RoomId = roomId,
+                        //UserName = user.UserName,
+                        DisplayName = user.DisplayName ?? user.UserName
+                    });
+                    await Clients.Group($"Room_{roomId}").SendAsync("MemberJoinedRoom", user.UserName, user.DisplayName ?? user.UserName, roomId);
                     return;
                 }
             }
 
-            // For private rooms or existing members
             if (await _chatService.IsRoomMemberAsync(roomId, userId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{roomId}");
@@ -127,107 +147,172 @@ namespace RealtimeChat.Hubs
         public async Task InviteUserToRoom(int roomId, string inviteeId)
         {
             var inviterId = Context.UserIdentifier;
-
-            if (inviterId == null) return;
-
-            if (await _chatService.InviteToRoomAsync(roomId, inviterId, inviteeId))
+            if (inviterId == null)
             {
-                var invitation = await _context.RoomInvitations
-                    .Include(ri => ri.ChatRoom)
-                    .Include(ri => ri.Inviter)
-                    .FirstOrDefaultAsync(ri => ri.ChatRoomId == roomId && ri.InviteeId == inviteeId && ri.Status == InvitationStatus.Pending);
-
-                if (invitation != null)
-                {
-                    Console.WriteLine($"Sending invitation to {inviteeId}, Invitation ID: {invitation.Id}");
-                    await Clients.User(inviteeId).SendAsync("ReceiveRoomInvitation", invitation);
-                }
-
-                await Clients.Caller.SendAsync("InvitationSent", new { Success = true, RoomId = roomId });
+                await Clients.Caller.SendAsync("Error", "User not authenticated.");
+                return;
             }
-            else
+
+            try
             {
-                await Clients.Caller.SendAsync("InvitationSent", new { Success = false, RoomId = roomId });
+                if (await _chatService.InviteToRoomAsync(roomId, inviterId, inviteeId))
+                {
+                    var invitation = await _context.RoomInvitations
+                        .Include(ri => ri.ChatRoom)
+                        .Include(ri => ri.Inviter)
+                        .FirstOrDefaultAsync(ri => ri.ChatRoomId == roomId && ri.InviteeId == inviteeId && ri.Status == InvitationStatus.Pending);
+
+                    if (invitation != null)
+                    {
+                        Console.WriteLine($"Sending invitation to {inviteeId}, Invitation ID: {invitation.Id}, Room: {invitation.ChatRoom?.Name}");
+                        await Clients.User(inviteeId).SendAsync("ReceiveRoomInvitation", invitation);
+                    }
+
+                    await Clients.Caller.SendAsync("InvitationSent", new { Success = true, RoomId = roomId });
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to send invitation to {inviteeId} for room {roomId}");
+                    await Clients.Caller.SendAsync("InvitationSent", new { Success = false, RoomId = roomId, Message = "Failed to send invitation." });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending invitation: {ex.Message}");
+                await Clients.Caller.SendAsync("InvitationSent", new { Success = false, RoomId = roomId, Message = ex.Message });
             }
         }
+
         public async Task AcceptRoomInvitation(int invitationId)
         {
             var userId = Context.UserIdentifier;
-
-            if (userId == null) return;
-
-            if (await _chatService.AcceptInvitationAsync(invitationId, userId))
+            if (userId == null)
             {
-                var acceptedInvitation = await _context.RoomInvitations
-                    .Include(ri => ri.ChatRoom)
-                    .FirstOrDefaultAsync(ri => ri.Id == invitationId);
-
-                if (acceptedInvitation != null)
-                {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{acceptedInvitation.ChatRoomId}");
-                    await Clients.Group($"Room_{acceptedInvitation.ChatRoomId}")
-                        .SendAsync("UserJoinedRoom", new
-                        {
-                            UserId = userId,
-                            RoomId = acceptedInvitation.ChatRoomId,
-                            UserName = Context.User?.Identity?.Name
-                        });
-                }
-
-                await Clients.Caller.SendAsync("InvitationAccepted", new { Success = true, InvitationId = invitationId });
+                await Clients.Caller.SendAsync("Error", "User not authenticated.");
+                return;
             }
-            else
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
             {
-                await Clients.Caller.SendAsync("InvitationAccepted", new { Success = false, InvitationId = invitationId });
+                await Clients.Caller.SendAsync("Error", "User not found.");
+                return;
+            }
+
+            try
+            {
+                if (await _chatService.AcceptInvitationAsync(invitationId, userId))
+                {
+                    var acceptedInvitation = await _context.RoomInvitations
+                        .Include(ri => ri.ChatRoom)
+                        .FirstOrDefaultAsync(ri => ri.Id == invitationId);
+
+                    if (acceptedInvitation != null)
+                    {
+                        await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{acceptedInvitation.ChatRoomId}");
+                        await Clients.Group($"Room_{acceptedInvitation.ChatRoomId}")
+                            .SendAsync("UserJoinedRoom", new
+                            {
+                                UserId = userId,
+                                RoomId = acceptedInvitation.ChatRoomId,
+                                UserName = user.UserName,
+                                DisplayName = user.DisplayName ?? user.UserName
+                            });
+                        await Clients.Group($"Room_{acceptedInvitation.ChatRoomId}")
+                            .SendAsync("MemberJoinedRoom", user.UserName, user.DisplayName ?? user.UserName, acceptedInvitation.ChatRoomId);
+                    }
+
+                    await Clients.Caller.SendAsync("InvitationAccepted", new { Success = true, InvitationId = invitationId });
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("InvitationAccepted", new { Success = false, InvitationId = invitationId, Message = "Failed to accept invitation." });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error accepting invitation {invitationId}: {ex.Message}");
+                await Clients.Caller.SendAsync("InvitationAccepted", new { Success = false, InvitationId = invitationId, Message = ex.Message });
             }
         }
 
         public async Task DeclineRoomInvitation(int invitationId)
         {
             var userId = Context.UserIdentifier;
-
-            if (userId == null) return;
-
-            if (await _chatService.DeclineInvitationAsync(invitationId, userId))
+            if (userId == null)
             {
-                await Clients.Caller.SendAsync("InvitationDeclined", new { Success = true, InvitationId = invitationId });
+                await Clients.Caller.SendAsync("Error", "User not authenticated.");
+                return;
             }
-            else
+
+            try
             {
-                await Clients.Caller.SendAsync("InvitationDeclined", new { Success = false, InvitationId = invitationId });
+                if (await _chatService.DeclineInvitationAsync(invitationId, userId))
+                {
+                    await Clients.Caller.SendAsync("InvitationDeclined", new { Success = true, InvitationId = invitationId });
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("InvitationDeclined", new { Success = false, InvitationId = invitationId, Message = "Failed to decline invitation." });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error declining invitation {invitationId}: {ex.Message}");
+                await Clients.Caller.SendAsync("InvitationDeclined", new { Success = false, InvitationId = invitationId, Message = ex.Message });
             }
         }
 
         public async Task LeaveRoomPermanently(int roomId)
         {
             var userId = Context.UserIdentifier;
-
-            if (userId == null) return;
-
-            if (await _chatService.LeaveRoomAsync(roomId, userId))
+            if (userId == null)
             {
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Room_{roomId}");
-                await Clients.Group($"Room_{roomId}")
-                    .SendAsync("UserLeftRoom", new
-                    {
-                        UserId = userId,
-                        RoomId = roomId,
-                        UserName = Context.User?.Identity?.Name
-                    });
-
-                await Clients.Caller.SendAsync("LeftRoom", new { Success = true, RoomId = roomId });
+                await Clients.Caller.SendAsync("Error", "User not authenticated.");
+                return;
             }
-            else
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
             {
-                await Clients.Caller.SendAsync("LeftRoom", new
+                await Clients.Caller.SendAsync("Error", "User not found.");
+                return;
+            }
+
+            try
+            {
+                if (await _chatService.LeaveRoomAsync(roomId, userId))
                 {
-                    Success = false,
-                    RoomId = roomId,
-                    Message = "Cannot leave room. You may be the only admin."
-                });
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Room_{roomId}");
+                    await Clients.Group($"Room_{roomId}")
+                        .SendAsync("UserLeftRoom", new
+                        {
+                            UserId = userId,
+                            RoomId = roomId,
+                            //UserName = user.UserName,
+                            DisplayName = user.DisplayName ?? user.UserName
+                        });
+                    // Add MemberLeftRoom notification
+                    await Clients.Group($"Room_{roomId}")
+                        .SendAsync("MemberLeftRoom", user.UserName, user.DisplayName ?? user.UserName, roomId);
+                    await Clients.Caller.SendAsync("LeftRoom", new { Success = true, RoomId = roomId });
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("LeftRoom", new
+                    {
+                        Success = false,
+                        RoomId = roomId,
+                        Message = "Cannot leave room. You may be the only admin."
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error leaving room {roomId}: {ex.Message}");
+                await Clients.Caller.SendAsync("LeftRoom", new { Success = false, RoomId = roomId, Message = ex.Message });
             }
         }
-
         public override async Task OnConnectedAsync()
         {
             var userId = Context.UserIdentifier;
@@ -245,9 +330,10 @@ namespace RealtimeChat.Hubs
                     {
                         await Groups.AddToGroupAsync(Context.ConnectionId, $"Room_{room.Id}");
                     }
+
+                    Console.WriteLine($"User {userId} connected");
                 }
 
-                Console.WriteLine($"User {Context.UserIdentifier} connected");
                 await Clients.All.SendAsync("UserOnline", userId);
             }
 
@@ -267,6 +353,7 @@ namespace RealtimeChat.Hubs
                     await _userManager.UpdateAsync(user);
                 }
 
+                Console.WriteLine($"User {userId} disconnected");
                 await Clients.All.SendAsync("UserOffline", userId);
             }
 

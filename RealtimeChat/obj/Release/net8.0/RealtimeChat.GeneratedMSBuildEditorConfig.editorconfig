@@ -195,8 +195,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDaGF0Q29tcG9uZW50c1xNZXNzYWdlSW5wdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/iti-9-month/Blazor/Lab/RealtimeChat/RealtimeChat/Components/ChatComponents/PendingInvitations.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDaGF0Q29tcG9uZW50c1xQZW5kaW5nSW52aXRhdGlvbnMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/iti-9-month/Blazor/Lab/RealtimeChat/RealtimeChat/Components/ChatComponents/RoomInfoDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDaGF0Q29tcG9uZW50c1xSb29tSW5mb0RpYWxvZy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/iti-9-month/Blazor/Lab/RealtimeChat/RealtimeChat/Components/ChatComponents/RoomSearchDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xDaGF0Q29tcG9uZW50c1xSb29tU2VhcmNoRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/iti-9-month/Blazor/Lab/RealtimeChat/RealtimeChat/Components/ChatComponents/UserSearchDialog.razor]
