@@ -47,3 +47,78 @@ It supports **user registration**, **authentication**, and **protected SignalR-b
    ```bash
    git clone https://github.com/OmarAraby/BlazorChatApp.git
    cd BlazorChatApp
+   ```
+   
+2. **Apply Migrations & Update Database**
+    
+    ```bash
+    dotnet ef database update
+    ```
+    
+3. **Run the application**
+    
+    ```bash
+    dotnet run
+    ```
+    
+4. Visit `https://localhost:7118` in your browser.
+    
+
+---
+
+## 👤 Default Roles / Access
+
+- New users can register and chat instantly.
+    
+- Only authenticated users can access the chat hub (`[Authorize]`).
+    
+
+---
+
+## 🧠 Project Structure
+
+```
+BlazorChatApp/
+│
+├── Components/          # Reusable UI components
+      └── Pages/               # Razor Pages (Login, Register, Chat)
+├── Data/                # ApplicationDbContext & seeding
+├── Hubs/                # SignalR ChatHub
+├── Models/              # Application models (e.g., ChatMessage, ConnectedUser)
+├── Services/            # Business logic & helper services
+├── wwwroot/             # Static files (JS, CSS, images)
+```
+
+---
+
+## 🧪 Future Enhancements
+
+- 📱 Mobile responsiveness
+
+- 📝 Chat history persistence
+    
+- 🔔 Notifications & typing indicators
+    
+- 📬 Private messaging
+    
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!  
+Feel free to open issues, suggest enhancements, or submit pull requests.
+
+---
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](https://chatgpt.com/c/LICENSE).
+
+---
+
+## 🙋‍♂️ Author
+
+**Omar Araby**  
+[GitHub](https://github.com/OmarAraby) • [LinkedIn](https://www.linkedin.com/in/omar-araby)
+
