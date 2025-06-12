@@ -1,20 +1,48 @@
-# 💬 BlazorChatApp
+# 💬 RealTimeChat Application
+
+Welcome to **RealTimeChat**, a modern real-time chat application built with **Blazor Server**, **SignalR**, and **ASP.NET Core**. It allows users to chat instantly in real-time through public or private rooms, with features like invitations, notifications, and identity management.
+
+## 🧭 Overview
+
+RealTimeChat aims to facilitate seamless and secure communication through dynamic chat rooms. It leverages the power of Blazor for responsive UI, SignalR for real-time data transfer, and ASP.NET Core Identity for robust authentication and user management.BlazorChatApp
 
 Real-time chat application built using **Blazor Server**, **SignalR**, and **ASP.NET Core Identity**.  
 It supports **user registration**, **authentication**, and **protected SignalR-based chat** between users in real time.
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- 🔐 User authentication and registration (ASP.NET Core Identity)
-- ⚡ Real-time messaging using SignalR
-- 🔒 Secured chat hub with `[Authorize]` attribute
-- 🧑‍🤝‍🧑 Track connected users
-- 🌙 Light/Dark theme toggle
-- 🧩 Modular architecture (UI components, services, models)
-
+- 🔁 **Real-Time Messaging** using SignalR
+    
+- 🌍 **Public & Private Chat Rooms**
+    
+- 🔐 **User Authentication** with ASP.NET Core Identity
+    
+- 📬 **User Invitations** to join private rooms
+    
+- 🔔 **Real-Time Notifications** for invitations and messages
+    
+- 🧾 **Room Management** (Create, Join, Leave)
+    
+- 📱 **Responsive UI** using [MudBlazor](https://mudblazor.com/)
+    
+- 🔄 **Auto-Refresh** on room changes
+    
+- 🔎 **Room Search Dialog** with integrated filtering
+    
 ---
+## 🛠️ Technologies Used
+
+| Layer        | Tech Stack                         |
+| ------------ | ---------------------------------- |
+| **Frontend** | Blazor Server + MudBlazor          |
+| **Backend**  | ASP.NET Core 8.0                   |
+| **Realtime** | SignalR                            |
+| **Database** | Entity Framework Core + SQL Server |
+| **Auth**     | ASP.NET Core Identity              |
+| **IDE**      | Visual Studio 2022+                |
+
 
 ## 📸 Screenshots!
 ![image](https://github.com/user-attachments/assets/8d526449-7cbc-4c6e-b13b-e7a791b067b6)
@@ -23,57 +51,67 @@ It supports **user registration**, **authentication**, and **protected SignalR-b
 ![image](https://github.com/user-attachments/assets/2a079326-02d5-4aeb-a9b4-96b7ce78cf66)
 ![image](https://github.com/user-attachments/assets/fdb19f4d-15eb-4c31-bccc-2cad03db3ee5)
 
-## 🛠️ Technologies Used
-
-- [.NET 8](https://dotnet.microsoft.com/en-us/)
-- [Blazor Server](https://learn.microsoft.com/en-us/aspnet/core/blazor/)
-- [SignalR](https://learn.microsoft.com/en-us/aspnet/core/signalr/)
-- [ASP.NET Core Identity](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity)
-- [MudBlazor (UI framework)](https://mudblazor.com/) – for material design components
 
 ---
+## 🚀 Getting Started
 
-## 📦 Getting Started
+### ✅ Prerequisites
 
-### Prerequisites
+- [.NET SDK 8.0](https://dotnet.microsoft.com/download)
+    
+- SQL Server (LocalDB or full instance)
+    
+- Visual Studio 2022 or later (with ASP.NET and web workload)
+    
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-- Visual Studio 2022+ or VS Code
+### 📦 Installation
 
-### Run the project
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/OmarAraby/BlazorChatApp.git
-   cd BlazorChatApp
-   ```
-   
-2. **Apply Migrations & Update Database**
+1. **Clone the Repository**
     
     ```bash
-    dotnet ef database update
+    git clone https://github.com/OmarAraby/BlazorChatApp.git
+    cd BlazorChatApp
     ```
     
-3. **Run the application**
+2. **Configure the Database**
+    
+    - Edit `appsettings.json`:
+        
+        ```json
+        "ConnectionStrings": {
+          "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=RealTimeChatDb;Trusted_Connection=True;MultipleActiveResultSets=true"
+        }
+        ```
+        
+    - Run migrations:
+        
+        ```bash
+        dotnet ef migrations add InitialCreate
+        dotnet ef database update
+        ```
+        
+3. **Restore & Run**
     
     ```bash
+    dotnet restore
     dotnet run
     ```
     
-4. Visit `https://localhost:7118` in your browser.
+    Open your browser at: `https://localhost:7118`
     
 
----
+## 🧪 Usage
 
-## 👤 Default Roles / Access
-
-- New users can register and chat instantly.
+- **Register/Login** to access chat features
     
-- Only authenticated users can access the chat hub (`[Authorize]`).
+- **Create Room** (public/private)
     
-
----
+- **Join Room** directly or via invitation
+    
+- **Chat in Real-Time**
+    
+- **Invite Users** to private rooms
+  ---
 
 ## 🧠 Project Structure
 
