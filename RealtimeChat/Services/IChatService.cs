@@ -5,7 +5,7 @@ namespace RealtimeChat.Services
 {
     public interface IChatService
     {
-        // Existing methods
+        // core methods
         Task<List<ChatRoom>> GetPublicRoomsAsync();
         Task<List<ChatRoom>> GetUserRoomsAsync(string userId);
         Task<List<Message>> GetRoomMessagesAsync(int roomId, int page = 1, int pageSize = 50);
